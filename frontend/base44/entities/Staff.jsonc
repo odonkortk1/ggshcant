@@ -1,0 +1,50 @@
+{
+  "name": "Staff",
+  "type": "object",
+  "properties": {
+    "email": {
+      "type": "string"
+    },
+    "pin": {
+      "type": "string"
+    },
+    "full_name": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "staff"
+      ],
+      "default": "staff"
+    }
+  },
+  "required": [
+    "email",
+    "pin",
+    "full_name"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
