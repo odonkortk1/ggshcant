@@ -1,4 +1,4 @@
-import 'dotenv/config';
+﻿import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import './db/index.js'; // ensures schema is applied on boot
@@ -12,7 +12,11 @@ import paymentRoutes from './routes/payments.js';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors());
+// In production, set ALLOWED_ORIGIN to your deployed frontend's URL
+// (e.g. https://ggsh-canteen.vercel.app). Falls back to allowing all
+// origins for local development.
+const allowedOrigin = process.env.ALLOWED_ORIGIN;
+app.use(cors(allowedOrigin ? { origin: allowedOrigin } : {}));
 
 // Stripe webhook needs the raw body for signature verification,
 // so it must be registered BEFORE the global JSON body parser.

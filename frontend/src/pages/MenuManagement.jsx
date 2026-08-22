@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { base44 } from "@/api/base44Client";
-import { useToast } from "@/components/ui/use-toast";
+﻿import React, { useEffect, useState } from "react";
+import { api } from "@/api/client";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,8 +9,6 @@ import { Plus, Pencil, Trash2, ArrowLeft, Loader2, UtensilsCrossed } from "lucid
 import { Link } from "react-router-dom";
 import MenuItemForm from "@/components/menu-management/MenuItemForm";
 import AdminNav from "@/components/AdminNav";
-import { useAuth } from "@/lib/AuthContext";
-import { useStaffAuth } from "@/lib/StaffAuthContext";
 
 export default function MenuManagement() {
   const { toast } = useToast();
@@ -18,33 +16,11 @@ export default function MenuManagement() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
   const [formOpen, setFormOpen] = useState(false);
-  const { user } = useAuth();
-  const { staff } = useStaffAuth();
-  const isStaffMode = !!staff && user?.role !== "admin";
-
-  const menuCreate = async (data) => {
-    if (isStaffMode) {
-      return base44.functions.invoke("menu-crud", { action: "create", staff_email: staff.email, staff_id: staff.staff_id, data });
-    }
-    return base44.entities.MenuItem.create(data);
-  };
-  const menuUpdate = async (id, data) => {
-    if (isStaffMode) {
-      return base44.functions.invoke("menu-crud", { action: "update", staff_email: staff.email, staff_id: staff.staff_id, item_id: id, data });
-    }
-    return base44.entities.MenuItem.update(id, data);
-  };
-  const menuDelete = async (id) => {
-    if (isStaffMode) {
-      return base44.functions.invoke("menu-crud", { action: "delete", staff_email: staff.email, staff_id: staff.staff_id, item_id: id });
-    }
-    return base44.entities.MenuItem.delete(id);
-  };
 
   const load = () => {
     setLoading(true);
-    base44.entities.MenuItem.list()
-      .then(setItems)
+    api.get("/api/menu")
+      .then((res) => setItems(res.data))
       .catch(() => toast({ title: "Failed to load menu items", variant: "destructive" }))
       .finally(() => setLoading(false));
   };
@@ -53,8 +29,8 @@ export default function MenuManagement() {
 
   const toggleAvailable = async (item) => {
     try {
-      await menuUpdate(item.id, { is_available: !item.is_available });
-      setItems(prev => prev.map(i => i.id === item.id ? { ...i, is_available: !i.is_available } : i));
+      await api.put(`/api/menu/${item.id}`, { is_available: !item.is_available }, { auth: true });
+      setItems((prev) => prev.map((i) => i.id === item.id ? { ...i, is_available: !i.is_available } : i));
     } catch {
       toast({ title: "Update failed", variant: "destructive" });
     }
@@ -62,8 +38,8 @@ export default function MenuManagement() {
 
   const toggleSpecial = async (item) => {
     try {
-      await menuUpdate(item.id, { is_special: !item.is_special });
-      setItems(prev => prev.map(i => i.id === item.id ? { ...i, is_special: !i.is_special } : i));
+      await api.put(`/api/menu/${item.id}`, { is_special: !item.is_special }, { auth: true });
+      setItems((prev) => prev.map((i) => i.id === item.id ? { ...i, is_special: !i.is_special } : i));
     } catch {
       toast({ title: "Update failed", variant: "destructive" });
     }
@@ -72,30 +48,23 @@ export default function MenuManagement() {
   const handleDelete = async (item) => {
     if (!confirm(`Delete "${item.name}"?`)) return;
     try {
-      await menuDelete(item.id);
-      setItems(prev => prev.filter(i => i.id !== item.id));
+      await api.delete(`/api/menu/${item.id}`, { auth: true });
+      setItems((prev) => prev.filter((i) => i.id !== item.id));
       toast({ title: "Item deleted" });
     } catch {
       toast({ title: "Delete failed", variant: "destructive" });
     }
   };
 
-  const handleEdit = (item) => {
-    setEditing(item);
-    setFormOpen(true);
-  };
-
-  const handleAdd = () => {
-    setEditing(null);
-    setFormOpen(true);
-  };
+  const handleEdit = (item) => { setEditing(item); setFormOpen(true); };
+  const handleAdd = () => { setEditing(null); setFormOpen(true); };
 
   const handleSave = async (data) => {
     if (editing) {
-      await menuUpdate(editing.id, data);
+      await api.put(`/api/menu/${editing.id}`, data, { auth: true });
       toast({ title: "Item updated" });
     } else {
-      await menuCreate(data);
+      await api.post("/api/menu", data, { auth: true });
       toast({ title: "Item created" });
     }
     setFormOpen(false);
@@ -109,9 +78,7 @@ export default function MenuManagement() {
           <div className="flex items-center gap-3">
             <Link to="/"><Button variant="ghost" size="icon"><ArrowLeft className="w-5 h-5" /></Button></Link>
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center">
-                <UtensilsCrossed className="w-5 h-5 text-white" />
-              </div>
+              <div className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center"><UtensilsCrossed className="w-5 h-5 text-white" /></div>
               <div>
                 <h1 className="font-heading font-bold text-[15px] leading-none">Menu Management</h1>
                 <p className="text-[11px] text-muted-foreground">Manage cafeteria items</p>
@@ -128,9 +95,7 @@ export default function MenuManagement() {
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
-          </div>
+          <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-emerald-600" /></div>
         ) : items.length === 0 ? (
           <div className="py-20 text-center text-sm text-muted-foreground">No menu items yet.</div>
         ) : (
@@ -148,27 +113,17 @@ export default function MenuManagement() {
                   </div>
                   <p className="text-xs text-muted-foreground truncate">{item.description || "No description"}</p>
                   <div className="flex items-center gap-3 mt-1">
-                    <span className="text-sm font-semibold text-emerald-700">₵{item.price?.toFixed(2)}</span>
+                    <span className="text-sm font-semibold text-emerald-700">{"\u20B5"}{item.price?.toFixed(2)}</span>
                     <Badge variant="outline" className="text-[10px]">{item.category}</Badge>
                   </div>
                 </div>
                 <div className="flex flex-col gap-2 items-end">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-muted-foreground">Available</span>
-                    <Switch checked={item.is_available} onCheckedChange={() => toggleAvailable(item)} />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-muted-foreground">Special</span>
-                    <Switch checked={item.is_special} onCheckedChange={() => toggleSpecial(item)} />
-                  </div>
+                  <div className="flex items-center gap-2"><span className="text-[10px] text-muted-foreground">Available</span><Switch checked={item.is_available} onCheckedChange={() => toggleAvailable(item)} /></div>
+                  <div className="flex items-center gap-2"><span className="text-[10px] text-muted-foreground">Special</span><Switch checked={item.is_special} onCheckedChange={() => toggleSpecial(item)} /></div>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="icon" onClick={() => handleEdit(item)}>
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleDelete(item)}>
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => handleEdit(item)}><Pencil className="w-4 h-4" /></Button>
+                  <Button variant="ghost" size="icon" onClick={() => handleDelete(item)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
                 </div>
               </Card>
             ))}

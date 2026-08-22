@@ -1,6 +1,6 @@
-import React from "react";
+﻿import React from "react";
 import { Button } from "@/components/ui/button";
-import { Clock, Flame, ArrowRight, CheckCircle2, ChefHat, PackageCheck, Smartphone, Banknote, Phone } from "lucide-react";
+import { Clock, Flame, CheckCircle2, ChefHat, PackageCheck, Smartphone, Banknote, Phone, Hash } from "lucide-react";
 
 const STATUS_CONFIG = {
   pending: { label: "New", color: "text-slate-600", bg: "bg-slate-50", ring: "ring-slate-200", icon: Clock },
@@ -24,6 +24,11 @@ function timeAgo(dateStr) {
   return `${hrs}h ago`;
 }
 
+function orderNumber(id) {
+  if (!id) return "------";
+  return id.replace(/-/g, "").slice(-6).toUpperCase();
+}
+
 export default function OrderCard({ order, onAdvance }) {
   const cfg = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
   const action = NEXT_ACTION[order.status];
@@ -34,21 +39,20 @@ export default function OrderCard({ order, onAdvance }) {
     <div className={`rounded-2xl bg-card border shadow-sm p-4 ring-1 ${cfg.ring} flex flex-col gap-3`}>
       <div className="flex items-start justify-between gap-2">
         <div>
+          <p className="text-[11px] font-mono font-semibold text-muted-foreground flex items-center gap-1">
+            <Hash className="w-2.5 h-2.5" /> {orderNumber(order.id)}
+          </p>
           <p className="font-heading font-semibold text-sm leading-tight">{order.customer_name}</p>
           {order.client_phone && (
-            <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-              <Phone className="w-2.5 h-2.5" /> {order.client_phone}
-            </p>
+            <p className="text-[11px] text-muted-foreground flex items-center gap-1"><Phone className="w-2.5 h-2.5" /> {order.client_phone}</p>
           )}
-          <p className="text-[11px] text-muted-foreground">{timeAgo(order.created_date)}</p>
+          <p className="text-[11px] text-muted-foreground">{timeAgo(order.created_at)}</p>
         </div>
         <div className="flex flex-col items-end gap-1">
           <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full ${cfg.bg} ${cfg.color}`}>
             <Icon className="w-3 h-3" /> {cfg.label}
           </span>
-          <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-            isCash ? "bg-amber-100 text-amber-700" : "bg-violet-100 text-violet-700"
-          }`}>
+          <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${isCash ? "bg-amber-100 text-amber-700" : "bg-violet-100 text-violet-700"}`}>
             {isCash ? <><Banknote className="w-2.5 h-2.5" /> Cash</> : <><Smartphone className="w-2.5 h-2.5" /> MoMo</>}
           </span>
         </div>
@@ -56,30 +60,17 @@ export default function OrderCard({ order, onAdvance }) {
 
       <div className="text-xs text-muted-foreground space-y-0.5">
         {order.items?.slice(0, 3).map((it, i) => (
-          <div key={i} className="flex justify-between">
-            <span>{it.quantity}× {it.name}</span>
-            <span>₵{(it.price * it.quantity).toFixed(2)}</span>
-          </div>
+          <div key={i} className="flex justify-between"><span>{it.quantity}x {it.name}</span><span>{"\u20B5"}{(it.price * it.quantity).toFixed(2)}</span></div>
         ))}
-        {order.items?.length > 3 && (
-          <p className="text-[11px] italic">+{order.items.length - 3} more</p>
-        )}
+        {order.items?.length > 3 && <p className="text-[11px] italic">+{order.items.length - 3} more</p>}
       </div>
 
-      {order.pickup_note && (
-        <p className="text-[11px] bg-muted/50 rounded-md px-2 py-1 text-muted-foreground">
-          📝 {order.pickup_note}
-        </p>
-      )}
+      {order.pickup_note && <p className="text-[11px] bg-muted/50 rounded-md px-2 py-1 text-muted-foreground">Note: {order.pickup_note}</p>}
 
       <div className="flex items-center justify-between pt-1 border-t">
-        <span className="text-sm font-bold">₵{order.total?.toFixed(2)}</span>
+        <span className="text-sm font-bold">{"\u20B5"}{order.total?.toFixed(2)}</span>
         {action && (
-          <Button
-            size="sm"
-            className={action.className}
-            onClick={() => onAdvance(order, action.status)}
-          >
+          <Button size="sm" className={action.className} onClick={() => onAdvance(order, action.status)}>
             <action.icon className="w-3.5 h-3.5 mr-1" /> {action.label}
           </Button>
         )}

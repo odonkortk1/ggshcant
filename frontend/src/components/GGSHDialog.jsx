@@ -1,10 +1,11 @@
-import React from "react";
+﻿import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Phone, CheckCircle2 } from "lucide-react";
 
-export default function GGSHDialog({ open, onOpenChange, phone, total }) {
-  const ussdCode = `*713*1332*${phone}#`;
+export default function GGSHDialog({ open, onOpenChange, total }) {
+  // Generic USSD code, not tied to any specific customer's phone number.
+  const ussdCode = "*713*1332#";
   const dialUrl = `tel:${encodeURIComponent(ussdCode)}`;
 
   return (
@@ -12,14 +13,14 @@ export default function GGSHDialog({ open, onOpenChange, phone, total }) {
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-heading">
-            <Phone className="w-5 h-5 text-blue-600" /> GGSH USSD Payment
+            <Phone className="w-5 h-5 text-blue-600" /> MoMo USSD Payment
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
           <div className="text-center bg-blue-50 rounded-lg py-3">
             <p className="text-xs text-muted-foreground">Amount to pay</p>
-            <p className="text-2xl font-bold text-blue-700">₵{total.toFixed(2)}</p>
+            <p className="text-2xl font-bold text-blue-700">{"\u20B5"}{total.toFixed(2)}</p>
           </div>
           <div className="space-y-2">
             <p className="text-xs text-muted-foreground">Dial this code on your phone to complete payment:</p>

@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+﻿import React, { useState } from "react";
+import { api } from "@/api/client";
 import { useClientAuth } from "@/lib/ClientAuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, Smartphone, Loader2, KeyRound } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ClientLogin() {
   const { loginClient } = useClientAuth();
@@ -26,18 +26,10 @@ export default function ClientLogin() {
     if (!/^0\d{9}$/.test(phone) || pin.length !== 6) return;
     setLoading(true);
     try {
-      const res = await base44.functions.invoke("client-auth", {
-        action: "login",
-        phone_number: phone.trim(),
-        pin,
-      });
-      if (res.data?.client_id) {
-        loginClient(res.data);
-        toast({ title: "Login successful", description: `Welcome back, ${res.data.full_name}!` });
-        navigate("/");
-      } else {
-        throw new Error(res.data?.error || "Login failed");
-      }
+      const res = await api.post("/api/client-auth/login", { phone_number: phone.trim(), pin });
+      loginClient(res.data);
+      toast({ title: "Login successful", description: `Welcome back, ${res.data.full_name}!` });
+      navigate("/");
     } catch (err) {
       toast({ title: "Login failed", description: err.message || "Invalid credentials", variant: "destructive" });
     } finally {
@@ -57,22 +49,14 @@ export default function ClientLogin() {
     }
     setLoading(true);
     try {
-      const res = await base44.functions.invoke("client-auth", {
-        action: "reset-pin",
+      await api.post("/api/client-auth/reset-pin", {
         phone_number: phone.trim(),
         full_name: fullName.trim(),
         pin: newPin,
       });
-      if (res.data?.success) {
-        toast({ title: "PIN reset successfully!", description: "You can now log in with your new PIN." });
-        setMode("login");
-        setPin("");
-        setFullName("");
-        setNewPin("");
-        setConfirmPin("");
-      } else {
-        throw new Error(res.data?.error || "Reset failed");
-      }
+      toast({ title: "PIN reset successfully!", description: "You can now log in with your new PIN." });
+      setMode("login");
+      setPin(""); setFullName(""); setNewPin(""); setConfirmPin("");
     } catch (err) {
       toast({ title: "Reset failed", description: err.message || "Could not reset PIN", variant: "destructive" });
     } finally {
@@ -108,26 +92,13 @@ export default function ClientLogin() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="pin">6-Digit PIN</Label>
-                <Input
-                  id="pin"
-                  value={pin}
-                  onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  placeholder="••••••"
-                  inputMode="numeric"
-                  type="password"
-                  maxLength={6}
-                  required
-                />
+                <Input id="pin" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="******" inputMode="numeric" type="password" maxLength={6} required />
               </div>
               <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white" disabled={loading || pin.length !== 6}>
                 {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Login
               </Button>
-              <button
-                type="button"
-                onClick={() => { setMode("reset"); setPin(""); }}
-                className="w-full text-xs text-muted-foreground hover:text-emerald-700 inline-flex items-center justify-center gap-1"
-              >
+              <button type="button" onClick={() => { setMode("reset"); setPin(""); }} className="w-full text-xs text-muted-foreground hover:text-emerald-700 inline-flex items-center justify-center gap-1">
                 <KeyRound className="w-3 h-3" /> Forgot PIN? Reset it
               </button>
             </form>
@@ -143,39 +114,17 @@ export default function ClientLogin() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="rp-new">New 6-Digit PIN</Label>
-                <Input
-                  id="rp-new"
-                  value={newPin}
-                  onChange={(e) => setNewPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  placeholder="••••••"
-                  inputMode="numeric"
-                  type="password"
-                  maxLength={6}
-                  required
-                />
+                <Input id="rp-new" value={newPin} onChange={(e) => setNewPin(e.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="******" inputMode="numeric" type="password" maxLength={6} required />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="rp-confirm">Confirm New PIN</Label>
-                <Input
-                  id="rp-confirm"
-                  value={confirmPin}
-                  onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  placeholder="••••••"
-                  inputMode="numeric"
-                  type="password"
-                  maxLength={6}
-                  required
-                />
+                <Input id="rp-confirm" value={confirmPin} onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="******" inputMode="numeric" type="password" maxLength={6} required />
               </div>
               <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white" disabled={loading || newPin.length !== 6}>
                 {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Reset PIN
               </Button>
-              <button
-                type="button"
-                onClick={() => { setMode("login"); setFullName(""); setNewPin(""); setConfirmPin(""); }}
-                className="w-full text-xs text-muted-foreground hover:text-emerald-700 inline-flex items-center justify-center gap-1"
-              >
+              <button type="button" onClick={() => { setMode("login"); setFullName(""); setNewPin(""); setConfirmPin(""); }} className="w-full text-xs text-muted-foreground hover:text-emerald-700 inline-flex items-center justify-center gap-1">
                 <ArrowLeft className="w-3 h-3" /> Back to login
               </button>
             </form>

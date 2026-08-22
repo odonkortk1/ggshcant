@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+﻿import React, { useState } from "react";
+import { api } from "@/api/client";
 import { useClientAuth } from "@/lib/ClientAuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, UserPlus, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ClientRegister() {
   const { loginClient } = useClientAuth();
@@ -23,19 +23,12 @@ export default function ClientRegister() {
     if (!name.trim() || !/^0\d{9}$/.test(phone) || pin.length !== 6) return;
     setLoading(true);
     try {
-      const res = await base44.functions.invoke("client-auth", {
-        action: "register",
-        phone_number: phone.trim(),
-        pin,
-        full_name: name.trim(),
+      const res = await api.post("/api/client-auth/register", {
+        phone_number: phone.trim(), pin, full_name: name.trim(),
       });
-      if (res.data?.client_id) {
-        loginClient(res.data);
-        toast({ title: "Account created!", description: `Welcome, ${name}!` });
-        navigate("/");
-      } else {
-        throw new Error(res.data?.error || "Registration failed");
-      }
+      loginClient(res.data);
+      toast({ title: "Account created!", description: `Welcome, ${name}!` });
+      navigate("/");
     } catch (err) {
       toast({ title: "Registration failed", description: err.message, variant: "destructive" });
     } finally {
@@ -60,7 +53,7 @@ export default function ClientRegister() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid gap-2">
               <Label htmlFor="name">Full Name</Label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. John Mensah" required />
+              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Jane Doe" required />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="phone">Phone Number</Label>
@@ -71,16 +64,7 @@ export default function ClientRegister() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="pin">6-Digit PIN</Label>
-              <Input
-                id="pin"
-                value={pin}
-                onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                placeholder="••••••"
-                inputMode="numeric"
-                type="password"
-                maxLength={6}
-                required
-              />
+              <Input id="pin" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="******" inputMode="numeric" type="password" maxLength={6} required />
               {pin.length > 0 && pin.length < 6 && (
                 <p className="text-[11px] text-amber-600">PIN must be exactly 6 digits</p>
               )}

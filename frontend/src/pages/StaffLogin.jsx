@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { api } from "@/api/client";
 import { useStaffAuth } from "@/lib/StaffAuthContext";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,14 +29,10 @@ export default function StaffLogin() {
     }
     setLoading(true);
     try {
-      const res = await base44.functions.invoke("staff-auth", { email: email.trim(), pin });
-      if (res.data?.staff_id) {
-        loginStaff(res.data);
-        toast({ title: `Welcome, ${res.data.full_name}!` });
-        navigate("/orders");
-      } else {
-        toast({ title: res.data?.error || "Login failed", variant: "destructive" });
-      }
+      const res = await api.post("/api/staff-auth/login", { email: email.trim(), pin });
+      loginStaff(res.data);
+      toast({ title: `Welcome, ${res.data.full_name}!` });
+      navigate("/orders");
     } catch (err) {
       toast({ title: err?.message || "Login failed", variant: "destructive" });
     } finally {
@@ -56,24 +52,12 @@ export default function StaffLogin() {
     }
     setLoading(true);
     try {
-      const res = await base44.functions.invoke("staff-change-pin", {
-        email: email.trim(),
-        old_pin: oldPin,
-        new_pin: newPin,
-      });
-      if (res.data?.success) {
-        toast({ title: "PIN changed successfully!", description: "You can now log in with your new PIN." });
-        setMode("login");
-        setPin("");
-        setOldPin("");
-        setNewPin("");
-        setConfirmPin("");
-      } else {
-        toast({ title: res.data?.error || "Could not change PIN", variant: "destructive" });
-      }
+      await api.post("/api/staff-auth/change-pin", { email: email.trim(), old_pin: oldPin, new_pin: newPin });
+      toast({ title: "PIN changed successfully!", description: "You can now log in with your new PIN." });
+      setMode("login");
+      setPin(""); setOldPin(""); setNewPin(""); setConfirmPin("");
     } catch (err) {
-      const msg = err?.message?.includes("Current PIN is incorrect") ? "Current PIN is incorrect" : (err?.message || "Could not change PIN");
-      toast({ title: msg, variant: "destructive" });
+      toast({ title: err?.message || "Could not change PIN", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -96,108 +80,42 @@ export default function StaffLogin() {
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="grid gap-2">
                 <Label htmlFor="staff-email">Email</Label>
-                <Input
-                  id="staff-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="staff@hospital.gov"
-                  className="h-10"
-                  required
-                />
+                <Input id="staff-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="staff@yourorg.com" className="h-10" required />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="staff-pin">6-digit PIN</Label>
-                <Input
-                  id="staff-pin"
-                  inputMode="numeric"
-                  pattern="\d{6}"
-                  maxLength={6}
-                  value={pin}
-                  onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
-                  placeholder="••••••"
-                  className="h-10 tracking-[0.3em] text-center font-semibold"
-                  required
-                />
+                <Input id="staff-pin" inputMode="numeric" pattern="\d{6}" maxLength={6} value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))} placeholder="••••••" className="h-10 tracking-[0.3em] text-center font-semibold" required />
               </div>
               <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white h-10" disabled={loading}>
                 {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Signing in...</> : "Sign In"}
               </Button>
-              <button
-                type="button"
-                onClick={() => { setMode("change"); setPin(""); }}
-                className="w-full text-xs text-muted-foreground hover:text-emerald-700 inline-flex items-center justify-center gap-1"
-              >
+              <button type="button" onClick={() => { setMode("change"); setPin(""); }} className="w-full text-xs text-muted-foreground hover:text-emerald-700 inline-flex items-center justify-center gap-1">
                 <KeyRound className="w-3 h-3" /> Change PIN
               </button>
-              <p className="text-[11px] text-muted-foreground text-center">
-                Forgot your PIN? Contact your administrator to reset it.
-              </p>
+              <p className="text-[11px] text-muted-foreground text-center">Forgot your PIN? Contact your administrator to reset it.</p>
             </form>
           ) : (
             <form onSubmit={handleChangePin} className="space-y-4">
               <div className="grid gap-2">
                 <Label htmlFor="cp-email">Email</Label>
-                <Input
-                  id="cp-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="staff@hospital.gov"
-                  className="h-10"
-                  required
-                />
+                <Input id="cp-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="staff@yourorg.com" className="h-10" required />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="cp-old">Current PIN</Label>
-                <Input
-                  id="cp-old"
-                  inputMode="numeric"
-                  pattern="\d{6}"
-                  maxLength={6}
-                  value={oldPin}
-                  onChange={(e) => setOldPin(e.target.value.replace(/\D/g, ""))}
-                  placeholder="••••••"
-                  className="h-10 tracking-[0.3em] text-center font-semibold"
-                  required
-                />
+                <Input id="cp-old" inputMode="numeric" pattern="\d{6}" maxLength={6} value={oldPin} onChange={(e) => setOldPin(e.target.value.replace(/\D/g, ""))} placeholder="••••••" className="h-10 tracking-[0.3em] text-center font-semibold" required />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="cp-new">New PIN</Label>
-                <Input
-                  id="cp-new"
-                  inputMode="numeric"
-                  pattern="\d{6}"
-                  maxLength={6}
-                  value={newPin}
-                  onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ""))}
-                  placeholder="••••••"
-                  className="h-10 tracking-[0.3em] text-center font-semibold"
-                  required
-                />
+                <Input id="cp-new" inputMode="numeric" pattern="\d{6}" maxLength={6} value={newPin} onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ""))} placeholder="••••••" className="h-10 tracking-[0.3em] text-center font-semibold" required />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="cp-confirm">Confirm New PIN</Label>
-                <Input
-                  id="cp-confirm"
-                  inputMode="numeric"
-                  pattern="\d{6}"
-                  maxLength={6}
-                  value={confirmPin}
-                  onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ""))}
-                  placeholder="••••••"
-                  className="h-10 tracking-[0.3em] text-center font-semibold"
-                  required
-                />
+                <Input id="cp-confirm" inputMode="numeric" pattern="\d{6}" maxLength={6} value={confirmPin} onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ""))} placeholder="••••••" className="h-10 tracking-[0.3em] text-center font-semibold" required />
               </div>
               <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white h-10" disabled={loading}>
                 {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Updating...</> : "Update PIN"}
               </Button>
-              <button
-                type="button"
-                onClick={() => { setMode("login"); setOldPin(""); setNewPin(""); setConfirmPin(""); }}
-                className="w-full text-xs text-muted-foreground hover:text-emerald-700 inline-flex items-center justify-center gap-1"
-              >
+              <button type="button" onClick={() => { setMode("login"); setOldPin(""); setNewPin(""); setConfirmPin(""); }} className="w-full text-xs text-muted-foreground hover:text-emerald-700 inline-flex items-center justify-center gap-1">
                 <ArrowLeft className="w-3 h-3" /> Back to login
               </button>
             </form>

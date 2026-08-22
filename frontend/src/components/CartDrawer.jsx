@@ -1,18 +1,17 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Trash2, Minus, Plus, ShoppingBag, Loader2, Smartphone, Banknote, Hash } from "lucide-react";
-import MoMoDialog from "@/components/MoMoDialog";
+import { Trash2, Minus, Plus, ShoppingBag, Loader2, Banknote, Smartphone, ShoppingBasket, UtensilsCrossed } from "lucide-react";
 import { useClientAuth } from "@/lib/ClientAuthContext";
 
 export default function CartDrawer({ open, onOpenChange, items, onRemove, onQtyChange, onPlaceOrder, submitting }) {
   const { client } = useClientAuth();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [payMethod, setPayMethod] = useState("momo");
-  const [momoOpen, setMomoOpen] = useState(false);
+  const [payMethod, setPayMethod] = useState("cash");
+  const [diningOption, setDiningOption] = useState(null); // "takeaway" | "dine_in"
   const total = items.reduce((s, i) => s + i.price * i.quantity, 0);
 
   useEffect(() => {
@@ -20,27 +19,16 @@ export default function CartDrawer({ open, onOpenChange, items, onRemove, onQtyC
     if (client?.phone_number) setPhone(client.phone_number);
   }, [client]);
 
-  const handleOrder = () => {
-    if (payMethod === "momo") {
-      setMomoOpen(true);
-    } else {
-      onPlaceOrder({
-        customer_name: name,
-        pickup_note: "",
-        cashPayment: payMethod === "cash",
-        ggshPayment: payMethod === "ggsh",
-        client_phone: client?.phone_number || phone,
-      });
-    }
-  };
+  const diningLabel = diningOption === "takeaway" ? "Takeaway" : diningOption === "dine_in" ? "Dine In" : "";
 
-  const handleMomoSuccess = () => {
-    setMomoOpen(false);
-    onOpenChange(false);
-    setName(client?.full_name || "");
-    setPhone(client?.phone_number || "");
-    setPayMethod("momo");
-    if (onPlaceOrder) onPlaceOrder({ customer_name: name, pickup_note: "", momoSuccess: true });
+  const handleOrder = () => {
+    onPlaceOrder({
+      customer_name: name,
+      pickup_note: diningLabel,
+      cashPayment: payMethod === "cash",
+      ggshPayment: payMethod === "momo",
+      client_phone: client?.phone_number || phone,
+    });
   };
 
   return (
@@ -67,7 +55,7 @@ export default function CartDrawer({ open, onOpenChange, items, onRemove, onQtyC
                 <div key={item.name} className="flex items-center gap-3 py-2 border-b last:border-0">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium leading-tight truncate">{item.name}</p>
-                    <p className="text-xs text-muted-foreground">₵{item.price.toFixed(2)} each</p>
+                    <p className="text-xs text-muted-foreground">{"\u20B5"}{item.price.toFixed(2)} each</p>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <button
@@ -84,12 +72,38 @@ export default function CartDrawer({ open, onOpenChange, items, onRemove, onQtyC
                       <Plus className="w-3 h-3" />
                     </button>
                   </div>
-                  <span className="text-sm font-semibold w-16 text-right">₵{(item.price * item.quantity).toFixed(2)}</span>
+                  <span className="text-sm font-semibold w-16 text-right">{"\u20B5"}{(item.price * item.quantity).toFixed(2)}</span>
                 </div>
               ))}
             </div>
 
             <div className="px-5 py-3 border-t space-y-3">
+              <div className="grid gap-2">
+                <Label className="text-xs">Takeaway or dine in? <span className="text-destructive">*</span></Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setDiningOption("takeaway")}
+                    className={`flex flex-col items-center gap-1 px-1 py-2.5 rounded-lg border text-xs font-medium transition-all ${
+                      diningOption === "takeaway"
+                        ? "border-blue-600 bg-blue-50 text-blue-700"
+                        : "border-border text-muted-foreground hover:border-blue-300"
+                    }`}
+                  >
+                    <ShoppingBasket className="w-4 h-4" /> Takeaway
+                  </button>
+                  <button
+                    onClick={() => setDiningOption("dine_in")}
+                    className={`flex flex-col items-center gap-1 px-1 py-2.5 rounded-lg border text-xs font-medium transition-all ${
+                      diningOption === "dine_in"
+                        ? "border-blue-600 bg-blue-50 text-blue-700"
+                        : "border-border text-muted-foreground hover:border-blue-300"
+                    }`}
+                  >
+                    <UtensilsCrossed className="w-4 h-4" /> Dine In
+                  </button>
+                </div>
+              </div>
+
               <div className="grid gap-2">
                 <Label htmlFor="cust-name" className="text-xs">Name for pickup</Label>
                 <Input
@@ -119,17 +133,7 @@ export default function CartDrawer({ open, onOpenChange, items, onRemove, onQtyC
 
               <div className="grid gap-2">
                 <Label className="text-xs">Payment method</Label>
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    onClick={() => setPayMethod("momo")}
-                    className={`flex flex-col items-center gap-1 px-1 py-2.5 rounded-lg border text-xs font-medium transition-all ${
-                      payMethod === "momo"
-                        ? "border-blue-600 bg-blue-50 text-blue-700"
-                        : "border-border text-muted-foreground hover:border-blue-300"
-                    }`}
-                  >
-                    <Smartphone className="w-4 h-4" /> MoMo
-                  </button>
+                <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => setPayMethod("cash")}
                     className={`flex flex-col items-center gap-1 px-1 py-2.5 rounded-lg border text-xs font-medium transition-all ${
@@ -141,55 +145,42 @@ export default function CartDrawer({ open, onOpenChange, items, onRemove, onQtyC
                     <Banknote className="w-4 h-4" /> Cash
                   </button>
                   <button
-                    onClick={() => setPayMethod("ggsh")}
+                    onClick={() => setPayMethod("momo")}
                     className={`flex flex-col items-center gap-1 px-1 py-2.5 rounded-lg border text-xs font-medium transition-all ${
-                      payMethod === "ggsh"
+                      payMethod === "momo"
                         ? "border-blue-600 bg-blue-50 text-blue-700"
                         : "border-border text-muted-foreground hover:border-blue-300"
                     }`}
                   >
-                    <Hash className="w-4 h-4" /> GGSH
+                    <Smartphone className="w-4 h-4" /> MoMo
                   </button>
                 </div>
               </div>
 
               <div className="flex items-center justify-between pt-1">
                 <span className="text-sm text-muted-foreground">Total</span>
-                <span className="text-lg font-heading font-bold text-blue-700">₵{total.toFixed(2)}</span>
+                <span className="text-lg font-heading font-bold text-blue-700">{"\u20B5"}{total.toFixed(2)}</span>
               </div>
             </div>
 
             <SheetFooter className="px-5 pb-5 pt-1">
               <Button
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                disabled={!name.trim() || !/^0\d{9}$/.test(phone) || submitting}
+                disabled={!name.trim() || !/^0\d{9}$/.test(phone) || !diningOption || submitting}
                 onClick={handleOrder}
               >
                 {submitting ? (
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Placing order...</>
                 ) : payMethod === "momo" ? (
-                  <><Smartphone className="w-4 h-4 mr-2" /> Pay ₵{total.toFixed(2)} via MoMo</>
-                ) : payMethod === "ggsh" ? (
-                  <><Hash className="w-4 h-4 mr-2" /> Place order · Pay via USSD</>
+                  <><Smartphone className="w-4 h-4 mr-2" /> Place order . Pay via MoMo</>
                 ) : (
-                  <><Banknote className="w-4 h-4 mr-2" /> Place order · Pay at pickup</>
+                  <><Banknote className="w-4 h-4 mr-2" /> Place order . Pay at pickup</>
                 )}
               </Button>
             </SheetFooter>
           </>
         )}
       </SheetContent>
-
-      <MoMoDialog
-        open={momoOpen}
-        onOpenChange={setMomoOpen}
-        total={total}
-        items={items}
-        customerName={name}
-        pickupNote=""
-        clientPhone={client?.phone_number || phone}
-        onSuccess={handleMomoSuccess}
-      />
     </Sheet>
   );
 }
