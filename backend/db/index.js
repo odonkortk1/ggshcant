@@ -1,20 +1,42 @@
-// Uses Node's built-in SQLite module (node:sqlite, stable since Node 22.5+).
-// No native compilation needed - avoids the better-sqlite3/node-gyp/Visual
-// Studio build-tools requirement on Windows.
-import { DatabaseSync } from 'node:sqlite';
+import { createClient } from '@libsql/client';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DB_PATH = path.join(__dirname, '..', 'canteen.db');
 
-export const db = new DatabaseSync(DB_PATH);
-db.exec('PRAGMA journal_mode = WAL');
-db.exec('PRAGMA foreign_keys = ON');
+const url = process.env.TURSO_DATABASE_URL || 'file:canteen.db';
+const authToken = process.env.TURSO_AUTH_TOKEN;
+
+// Initialize Turso LibSQL client
+export const db = createClient({
+  url,
+  authToken,
+});
 
 // Run schema on startup (idempotent - uses CREATE TABLE IF NOT EXISTS)
-const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
-db.exec(schema);
+async function initDb() {
+  try {
+    const schemaPath = path.join(__dirname, 'schema.sql');
+    if (fs.existsSync(schemaPath)) {
+      const schema = fs.readFileSync(schemaPath, 'utf8');
+      
+      // Split schema into individual SQL statements
+      const statements = schema
+        .split(';')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+
+      for (const statement of statements) {
+        await db.execute(statement);
+      }
+      console.log('Database schema synchronized successfully.');
+    }
+  } catch (err) {
+    console.error('Failed to initialize database schema:', err);
+  }
+}
+
+initDb();
 
 export default db;
