@@ -4,7 +4,6 @@ import { db } from '../db/index.js';
 
 const router = express.Router();
 
-// Safe parser for order items
 function parseOrder(row) {
   if (!row) return null;
   let items = [];
@@ -28,11 +27,13 @@ function parseOrder(row) {
 
 // POST /api/orders - Create Order
 router.post('/', async (req, res) => {
-  const { id, client_id, client_name, client_phone, items, total_amount, payment_status, status } = req.body;
-  const orderId = id || uuidv4();
-  const serializedItems = typeof items === 'string' ? items : JSON.stringify(items || []);
-
   try {
+    const { id, client_id, client_name, client_phone, items, total_amount, payment_status, status } = req.body;
+
+    const orderId = id || uuidv4();
+    const serializedItems = typeof items === 'string' ? items : JSON.stringify(items || []);
+    const safeTotal = typeof total_amount === 'number' ? total_amount : parseFloat(total_amount) || 0;
+
     await db.execute({
       sql: `
         INSERT INTO orders (id, client_id, client_name, client_phone, items, total_amount, payment_status, status)
@@ -44,7 +45,7 @@ router.post('/', async (req, res) => {
         client_name || null,
         client_phone || null,
         serializedItems,
-        total_amount || 0,
+        safeTotal,
         payment_status || 'pending',
         status || 'received',
       ],
@@ -58,25 +59,7 @@ router.post('/', async (req, res) => {
     res.status(201).json(parseOrder(result.rows[0]));
   } catch (err) {
     console.error('Error creating order:', err);
-    res.status(500).json({ error: 'Failed to create order', details: err.message });
-  }
-});
-
-// GET /api/orders/:id - Get Order by ID
-router.get('/:id', async (req, res) => {
-  try {
-    const result = await db.execute({
-      sql: 'SELECT * FROM orders WHERE id = ?',
-      args: [req.params.id],
-    });
-
-    const order = result.rows[0];
-    if (!order) return res.status(404).json({ error: 'Order not found' });
-
-    res.json(parseOrder(order));
-  } catch (err) {
-    console.error('Error fetching order:', err);
-    res.status(500).json({ error: 'Failed to fetch order', details: err.message });
+    res.status(500).json({ error: 'Failed to create order', details: err.message || String(err) });
   }
 });
 
@@ -97,7 +80,25 @@ router.get('/', async (req, res) => {
     res.json(result.rows.map(parseOrder));
   } catch (err) {
     console.error('Error fetching orders:', err);
-    res.status(500).json({ error: 'Failed to fetch orders', details: err.message });
+    res.status(500).json({ error: 'Failed to fetch orders', details: err.message || String(err) });
+  }
+});
+
+// GET /api/orders/:id - Get Order by ID
+router.get('/:id', async (req, res) => {
+  try {
+    const result = await db.execute({
+      sql: 'SELECT * FROM orders WHERE id = ?',
+      args: [req.params.id],
+    });
+
+    const order = result.rows[0];
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    res.json(parseOrder(order));
+  } catch (err) {
+    console.error('Error fetching order:', err);
+    res.status(500).json({ error: 'Failed to fetch order', details: err.message || String(err) });
   }
 });
 
@@ -133,7 +134,7 @@ router.put('/:id/status', async (req, res) => {
     res.json(parseOrder(order));
   } catch (err) {
     console.error('Error updating order status:', err);
-    res.status(500).json({ error: 'Failed to update order', details: err.message });
+    res.status(500).json({ error: 'Failed to update order', details: err.message || String(err) });
   }
 });
 
@@ -144,7 +145,7 @@ router.delete('/', async (req, res) => {
     res.json({ success: true, deleted: Number(result.rowsAffected) });
   } catch (err) {
     console.error('Error deleting all orders:', err);
-    res.status(500).json({ error: 'Failed to clear orders', details: err.message });
+    res.status(500).json({ error: 'Failed to clear orders', details: err.message || String(err) });
   }
 });
 
@@ -163,7 +164,7 @@ router.delete('/:id', async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error('Error deleting order:', err);
-    res.status(500).json({ error: 'Failed to delete order', details: err.message });
+    res.status(500).json({ error: 'Failed to delete order', details: err.message || String(err) });
   }
 });
 
