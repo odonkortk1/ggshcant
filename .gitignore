@@ -1,2 +1,23 @@
-.vercel
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
 .env*
+!.env.example
+
+# Build & Deployment caches
+.vercel
+.render/
+dist/
+build/
+
+# Local database files
+*.db
+*.db-journal
+canteen.db
+
+# OS / Editor clutter
+.DS_Store
+Thumbs.db
+.vscode/
