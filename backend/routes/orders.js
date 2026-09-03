@@ -4,59 +4,79 @@ import { db } from '../db/index.js';
 
 const router = express.Router();
 
-function parseOrder(row) {
-  if (!row) return null;
-  let items = [];
-  if (row.items) {
-    if (typeof row.items === 'string') {
-      try {
-        items = JSON.parse(row.items);
-      } catch (e) {
-        console.error(`Failed to parse items JSON for order ${row.id}:`, e);
-        items = [];
-      }
-    } else {
-      items = row.items;
-    }
+// Helper: Attach order_items to a parent order object
+async function attachItemsToOrder(order) {
+  if (!order) return null;
+  try {
+    const itemsResult = await db.execute({
+      sql: 'SELECT * FROM order_items WHERE order_id = ?',
+      args: [order.id],
+    });
+    return {
+      ...order,
+      // Map customer_* names back to client_* if frontend expects them
+      client_name: order.customer_name,
+      client_phone: order.customer_phone,
+      items: itemsResult.rows,
+    };
+  } catch (err) {
+    console.error(`Error fetching items for order ${order.id}:`, err);
+    return { ...order, items: [] };
   }
-  return {
-    ...row,
-    items,
-  };
 }
 
 // POST /api/orders - Create Order
 router.post('/', async (req, res) => {
   try {
-    const { id, client_id, client_name, client_phone, items, total_amount, payment_status, status } = req.body;
+    const { id, client_name, client_phone, customer_name, customer_phone, items, total_amount, status } = req.body;
 
     const orderId = id || uuidv4();
-    const serializedItems = typeof items === 'string' ? items : JSON.stringify(items || []);
     const safeTotal = typeof total_amount === 'number' ? total_amount : parseFloat(total_amount) || 0;
+    const name = customer_name || client_name || null;
+    const phone = customer_phone || client_phone || null;
+    const itemList = Array.isArray(items) ? items : (typeof items === 'string' ? JSON.parse(items) : []);
 
+    // 1. Insert into orders table matching exact Turso columns
     await db.execute({
       sql: `
-        INSERT INTO orders (id, client_id, client_name, client_phone, items, total_amount, payment_status, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO orders (id, customer_name, customer_phone, total_amount, status)
+        VALUES (?, ?, ?, ?, ?)
       `,
       args: [
         orderId,
-        client_id || null,
-        client_name || null,
-        client_phone || null,
-        serializedItems,
+        name,
+        phone,
         safeTotal,
-        payment_status || 'pending',
         status || 'received',
       ],
     });
 
-    const result = await db.execute({
+    // 2. Insert line items into order_items table
+    for (const item of itemList) {
+      const orderItemId = uuidv4();
+      await db.execute({
+        sql: `
+          INSERT INTO order_items (id, order_id, menu_item_id, quantity, price)
+          VALUES (?, ?, ?, ?, ?)
+        `,
+        args: [
+          orderItemId,
+          orderId,
+          item.id || item.menu_item_id || item.item_id,
+          item.quantity || item.qty || 1,
+          item.price || 0,
+        ],
+      });
+    }
+
+    // 3. Fetch and return complete created order
+    const orderResult = await db.execute({
       sql: 'SELECT * FROM orders WHERE id = ?',
       args: [orderId],
     });
 
-    res.status(201).json(parseOrder(result.rows[0]));
+    const fullOrder = await attachItemsToOrder(orderResult.rows[0]);
+    res.status(201).json(fullOrder);
   } catch (err) {
     console.error('Error creating order:', err);
     res.status(500).json({ error: 'Failed to create order', details: err.message || String(err) });
@@ -65,26 +85,17 @@ router.post('/', async (req, res) => {
 
 // GET /api/orders - List Orders
 router.get('/', async (req, res) => {
-  const { client_id } = req.query;
   try {
-    let result;
-    if (client_id) {
-      result = await db.execute({
-        sql: 'SELECT * FROM orders WHERE client_id = ? ORDER BY created_at DESC',
-        args: [client_id],
-      });
-    } else {
-      result = await db.execute('SELECT * FROM orders ORDER BY created_at DESC');
-    }
-
-    res.json(result.rows.map(parseOrder));
+    const result = await db.execute('SELECT * FROM orders ORDER BY id DESC');
+    const ordersWithItems = await Promise.all(result.rows.map(attachItemsToOrder));
+    res.json(ordersWithItems);
   } catch (err) {
     console.error('Error fetching orders:', err);
     res.status(500).json({ error: 'Failed to fetch orders', details: err.message || String(err) });
   }
 });
 
-// GET /api/orders/:id - Get Order by ID
+// GET /api/orders/:id - Single Order
 router.get('/:id', async (req, res) => {
   try {
     const result = await db.execute({
@@ -95,7 +106,8 @@ router.get('/:id', async (req, res) => {
     const order = result.rows[0];
     if (!order) return res.status(404).json({ error: 'Order not found' });
 
-    res.json(parseOrder(order));
+    const fullOrder = await attachItemsToOrder(order);
+    res.json(fullOrder);
   } catch (err) {
     console.error('Error fetching order:', err);
     res.status(500).json({ error: 'Failed to fetch order', details: err.message || String(err) });
@@ -104,22 +116,12 @@ router.get('/:id', async (req, res) => {
 
 // PUT /api/orders/:id/status - Update Order Status
 router.put('/:id/status', async (req, res) => {
-  const { status, payment_status } = req.body;
+  const { status } = req.body;
   try {
-    if (status && payment_status) {
+    if (status) {
       await db.execute({
-        sql: 'UPDATE orders SET status = ?, payment_status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-        args: [status, payment_status, req.params.id],
-      });
-    } else if (status) {
-      await db.execute({
-        sql: 'UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        sql: 'UPDATE orders SET status = ? WHERE id = ?',
         args: [status, req.params.id],
-      });
-    } else if (payment_status) {
-      await db.execute({
-        sql: 'UPDATE orders SET payment_status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-        args: [payment_status, req.params.id],
       });
     }
 
@@ -131,7 +133,8 @@ router.put('/:id/status', async (req, res) => {
     const order = result.rows[0];
     if (!order) return res.status(404).json({ error: 'Order not found' });
 
-    res.json(parseOrder(order));
+    const fullOrder = await attachItemsToOrder(order);
+    res.json(fullOrder);
   } catch (err) {
     console.error('Error updating order status:', err);
     res.status(500).json({ error: 'Failed to update order', details: err.message || String(err) });
@@ -141,6 +144,7 @@ router.put('/:id/status', async (req, res) => {
 // DELETE /api/orders - Clear Orders
 router.delete('/', async (req, res) => {
   try {
+    await db.execute('DELETE FROM order_items');
     const result = await db.execute('DELETE FROM orders');
     res.json({ success: true, deleted: Number(result.rowsAffected) });
   } catch (err) {
@@ -152,6 +156,11 @@ router.delete('/', async (req, res) => {
 // DELETE /api/orders/:id - Delete Single Order
 router.delete('/:id', async (req, res) => {
   try {
+    await db.execute({
+      sql: 'DELETE FROM order_items WHERE order_id = ?',
+      args: [req.params.id],
+    });
+
     const result = await db.execute({
       sql: 'DELETE FROM orders WHERE id = ?',
       args: [req.params.id],
