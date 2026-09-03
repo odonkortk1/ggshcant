@@ -4,7 +4,7 @@ import { db } from '../db/index.js';
 
 const router = express.Router();
 
-// Helper: Safely attach items to an order
+// Helper: Attach order_items and map all status / name aliases expected by dashboard
 async function attachItemsToOrder(order) {
   if (!order) return null;
   
@@ -19,11 +19,30 @@ async function attachItemsToOrder(order) {
     console.error(`Could not fetch order_items for order ${order.id}:`, err.message);
   }
 
+  // Normalize status string across different frontend tab checks
+  const currentStatus = order.status ? order.status.toLowerCase() : 'received';
+
   return {
     ...order,
-    client_name: order.customer_name || '',
-    client_phone: order.customer_phone || '',
-    items,
+    // Provide aliases for both client_* and customer_* fields
+    client_name: order.customer_name || order.client_name || 'Guest',
+    customer_name: order.customer_name || order.client_name || 'Guest',
+    client_phone: order.customer_phone || order.client_phone || '',
+    customer_phone: order.customer_phone || order.client_phone || '',
+    
+    // Map status so 'received' satisfies 'new' or 'received' filters
+    status: currentStatus === 'received' ? 'new' : currentStatus,
+    raw_status: currentStatus,
+    payment_status: order.payment_status || 'pending',
+    
+    items: items.map(item => ({
+      ...item,
+      name: item.item_name || item.name || 'Menu Item',
+      title: item.item_name || item.title || 'Menu Item',
+      price: item.price || 0,
+    })),
+    
+    created_at: order.created_at || new Date().toISOString(),
   };
 }
 
@@ -34,11 +53,10 @@ router.post('/', async (req, res) => {
 
     const orderId = id || uuidv4();
     const safeTotal = typeof total_amount === 'number' ? total_amount : parseFloat(total_amount) || 0;
-    const name = customer_name || client_name || null;
-    const phone = customer_phone || client_phone || null;
+    const name = customer_name || client_name || 'Guest';
+    const phone = customer_phone || client_phone || '';
     const itemList = Array.isArray(items) ? items : (typeof items === 'string' ? JSON.parse(items) : []);
 
-    // 1. Insert into parent 'orders' table
     await db.execute({
       sql: `
         INSERT INTO orders (id, customer_name, customer_phone, total_amount, status)
@@ -53,7 +71,6 @@ router.post('/', async (req, res) => {
       ],
     });
 
-    // 2. Insert into 'order_items' table with item_name included
     for (const item of itemList) {
       const orderItemId = uuidv4();
       const itemName = item.name || item.item_name || item.title || 'Menu Item';
@@ -75,11 +92,10 @@ router.post('/', async (req, res) => {
           ],
         });
       } catch (itemErr) {
-        console.error('Failed to insert row into order_items:', itemErr.message);
+        console.error('Failed to insert order_item:', itemErr.message);
       }
     }
 
-    // 3. Retrieve and respond
     const orderResult = await db.execute({
       sql: 'SELECT * FROM orders WHERE id = ?',
       args: [orderId],
