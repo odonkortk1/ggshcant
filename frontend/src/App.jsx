@@ -4,6 +4,7 @@ import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import ScrollToTop from './components/ScrollToTop';
+import Footer from './components/Footer';
 
 import Home from './pages/Home';
 import OrderTracking from './pages/OrderTracking';
@@ -40,6 +41,7 @@ function App() {
               </Route>
               <Route path="*" element={<PageNotFound />} />
             </Routes>
+            <Footer />
           </Router>
         </StaffAuthProvider>
       </ClientAuthProvider>
