@@ -1,122 +1,152 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import db from '../db/index.js';
-import { signStaffToken, requireAdmin } from './middleware/auth.js';
+import { requireStaff } from './middleware/auth.js';
 
 const router = express.Router();
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_change_in_prod';
 
-function validatePin(pin) {
-  return /^\d{6}$/.test(pin);
-}
-
-// POST /api/staff-auth/login
+// POST /api/staff/login
 router.post('/login', async (req, res) => {
   const { email, pin } = req.body;
-  if (!email || !pin) {
-    return res.status(400).json({ error: 'Email and PIN are required' });
-  }
-  if (!validatePin(pin)) {
-    return res.status(400).json({ error: 'PIN must be exactly 6 digits' });
-  }
+  if (!email || !pin) return res.status(400).json({ error: 'Email and PIN are required' });
 
-  const staff = db.prepare('SELECT * FROM staff WHERE email = ?').get(email.toLowerCase().trim());
-  if (!staff || !(await bcrypt.compare(pin, staff.pin_hash))) {
-    return res.status(401).json({ error: 'Invalid email or PIN' });
-  }
+  try {
+    const result = await db.execute({
+      sql: 'SELECT * FROM staff WHERE email = ?',
+      args: [email.toLowerCase().trim()],
+    });
+    const staff = result.rows[0];
 
-  const token = signStaffToken(staff);
-  res.json({
-    token,
-    staff_id: staff.id,
-    email: staff.email,
-    full_name: staff.full_name,
-    role: staff.role || 'staff',
-  });
+    if (!staff || !(await bcrypt.compare(pin, staff.pin_hash))) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const token = jwt.sign(
+      { id: staff.id, name: staff.name, email: staff.email, role: staff.role },
+      JWT_SECRET,
+      { expiresIn: '12h' }
+    );
+
+    res.json({ token, staff: { id: staff.id, name: staff.name, email: staff.email, role: staff.role } });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ error: 'Authentication failed' });
+  }
 });
 
-// POST /api/staff-auth/change-pin
-router.post('/change-pin', async (req, res) => {
-  const { email, old_pin, new_pin } = req.body;
-  if (!email || !old_pin || !new_pin) {
-    return res.status(400).json({ error: 'Email, current PIN, and new PIN are required' });
-  }
-  if (!validatePin(new_pin)) {
-    return res.status(400).json({ error: 'New PIN must be exactly 6 digits' });
-  }
-  if (old_pin === new_pin) {
-    return res.status(400).json({ error: 'New PIN must be different from current PIN' });
-  }
+// POST /api/staff/set-pin
+router.post('/set-pin', async (req, res) => {
+  const { email, pin } = req.body;
+  if (!email || !pin) return res.status(400).json({ error: 'Email and PIN are required' });
 
-  const staff = db.prepare('SELECT * FROM staff WHERE email = ?').get(email.toLowerCase().trim());
-  if (!staff || !(await bcrypt.compare(old_pin, staff.pin_hash))) {
-    return res.status(401).json({ error: 'Current PIN is incorrect' });
-  }
+  try {
+    const result = await db.execute({
+      sql: 'SELECT * FROM staff WHERE email = ?',
+      args: [email.toLowerCase().trim()],
+    });
+    const staff = result.rows[0];
+    if (!staff) return res.status(404).json({ error: 'Staff account not found' });
 
-  const pinHash = await bcrypt.hash(new_pin, 10);
-  db.prepare('UPDATE staff SET pin_hash = ? WHERE id = ?').run(pinHash, staff.id);
-  res.json({ success: true, message: 'PIN changed successfully' });
+    const pinHash = await bcrypt.hash(pin, 10);
+    await db.execute({
+      sql: 'UPDATE staff SET pin_hash = ? WHERE id = ?',
+      args: [pinHash, staff.id],
+    });
+
+    res.json({ success: true, message: 'PIN updated successfully' });
+  } catch (err) {
+    console.error('Set PIN error:', err);
+    res.status(500).json({ error: 'Failed to set PIN' });
+  }
 });
 
-// GET /api/staff-auth/staff
-router.get('/staff', requireAdmin, (req, res) => {
-  const staff = db.prepare(
-    'SELECT id, email, full_name, role, created_at FROM staff ORDER BY created_at DESC'
-  ).all();
-  res.json(staff);
+// GET /api/staff (Admin only)
+router.get('/', requireStaff, async (req, res) => {
+  if (req.staff.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
+  try {
+    const result = await db.execute('SELECT id, name, email, role, created_at FROM staff ORDER BY name ASC');
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch staff members' });
+  }
 });
 
-// POST /api/staff-auth/staff
-router.post('/staff', requireAdmin, async (req, res) => {
-  const { full_name, email, pin, role } = req.body;
-  if (!full_name?.trim() || !email?.trim() || !validatePin(pin)) {
-    return res.status(400).json({ error: 'full_name, email, and a valid 6-digit pin are required' });
+// POST /api/staff (Admin only - create staff)
+router.post('/', requireStaff, async (req, res) => {
+  if (req.staff.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
+  const { name, email, role, pin } = req.body;
+
+  if (!name || !email || !pin) {
+    return res.status(400).json({ error: 'Name, email, and PIN are required' });
   }
 
-  const normalizedEmail = email.trim().toLowerCase();
-  const existing = db.prepare('SELECT id FROM staff WHERE email = ?').get(normalizedEmail);
-  if (existing) {
-    return res.status(409).json({ error: 'This email is already in use' });
+  const normalizedEmail = email.toLowerCase().trim();
+
+  try {
+    const existing = await db.execute({
+      sql: 'SELECT id FROM staff WHERE email = ?',
+      args: [normalizedEmail],
+    });
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ error: 'Staff member with this email already exists' });
+    }
+
+    const id = uuidv4();
+    const pinHash = await bcrypt.hash(pin, 10);
+
+    await db.execute({
+      sql: 'INSERT INTO staff (id, name, email, role, pin_hash) VALUES (?, ?, ?, ?, ?)',
+      args: [id, name, normalizedEmail, role || 'staff', pinHash],
+    });
+
+    res.json({ id, name, email: normalizedEmail, role: role || 'staff' });
+  } catch (err) {
+    console.error('Create staff error:', err);
+    res.status(500).json({ error: 'Failed to create staff member' });
   }
-
-  const pinHash = await bcrypt.hash(pin, 10);
-  const staff = {
-    id: uuidv4(),
-    email: normalizedEmail,
-    full_name: full_name.trim(),
-    role: role === 'admin' ? 'admin' : 'staff',
-  };
-  db.prepare(
-    'INSERT INTO staff (id, email, pin_hash, full_name, role) VALUES (?, ?, ?, ?, ?)'
-  ).run(staff.id, staff.email, pinHash, staff.full_name, staff.role);
-
-  res.status(201).json(staff);
 });
 
-// PATCH /api/staff-auth/staff/:id/reset-pin
-router.patch('/staff/:id/reset-pin', requireAdmin, async (req, res) => {
+// PUT /api/staff/:id/pin (Admin only - reset staff PIN)
+router.put('/:id/pin', requireStaff, async (req, res) => {
+  if (req.staff.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
   const { pin } = req.body;
-  if (!validatePin(pin)) {
-    return res.status(400).json({ error: 'A valid 6-digit pin is required' });
-  }
+  if (!pin) return res.status(400).json({ error: 'New PIN is required' });
 
-  const staff = db.prepare('SELECT id FROM staff WHERE id = ?').get(req.params.id);
-  if (!staff) {
-    return res.status(404).json({ error: 'Staff member not found' });
-  }
+  try {
+    const staffResult = await db.execute({
+      sql: 'SELECT id FROM staff WHERE id = ?',
+      args: [req.params.id],
+    });
+    if (!staffResult.rows.length) return res.status(404).json({ error: 'Staff member not found' });
 
-  const pinHash = await bcrypt.hash(pin, 10);
-  db.prepare('UPDATE staff SET pin_hash = ? WHERE id = ?').run(pinHash, req.params.id);
-  res.json({ success: true, message: 'PIN reset successfully' });
+    const pinHash = await bcrypt.hash(pin, 10);
+    await db.execute({
+      sql: 'UPDATE staff SET pin_hash = ? WHERE id = ?',
+      args: [pinHash, req.params.id],
+    });
+
+    res.json({ success: true, message: 'Staff PIN updated successfully' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update PIN' });
+  }
 });
 
-// DELETE /api/staff-auth/staff/:id
-router.delete('/staff/:id', requireAdmin, (req, res) => {
-  const result = db.prepare('DELETE FROM staff WHERE id = ?').run(req.params.id);
-  if (result.changes === 0) {
-    return res.status(404).json({ error: 'Staff member not found' });
+// DELETE /api/staff/:id (Admin only)
+router.delete('/:id', requireStaff, async (req, res) => {
+  if (req.staff.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
+  try {
+    const result = await db.execute({
+      sql: 'DELETE FROM staff WHERE id = ?',
+      args: [req.params.id],
+    });
+    if (result.rowsAffected === 0) return res.status(404).json({ error: 'Staff member not found' });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete staff member' });
   }
-  res.json({ success: true, message: 'Staff account removed' });
 });
 
 export default router;
