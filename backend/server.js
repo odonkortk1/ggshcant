@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 import './db/index.js';
 
 import clientAuthRoutes from './routes/clientAuth.js';
@@ -39,8 +40,11 @@ app.use(cors({
 app.use('/api/payments/stripe/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 
-// Serve static frontend build assets (adjust path if dist is located elsewhere)
-app.use(express.static(path.join(__dirname, '../dist')));
+// Path to Vite's root dist directory
+const distPath = path.join(__dirname, '../dist');
+
+// Serve static build assets
+app.use(express.static(distPath));
 
 // API Routes
 app.use('/api/client-auth', clientAuthRoutes);
@@ -51,12 +55,18 @@ app.use('/api/payments', paymentRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
-// SPA Catch-All Fallback: Serve index.html for any client-side routes (e.g. /orders, /menu)
+// Catch-all route to serve index.html for client-side React routes like /orders
 app.get('*', (req, res) => {
   if (req.path.startsWith('/api')) {
     return res.status(404).json({ error: 'API route not found' });
   }
-  res.sendFile(path.join(__dirname, '../dist/index.html'));
+
+  const indexPath = path.join(distPath, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(404).send('Build folder or index.html not found.');
+  }
 });
 
 app.listen(PORT, () => {
