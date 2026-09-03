@@ -4,25 +4,27 @@ import { db } from '../db/index.js';
 
 const router = express.Router();
 
-// Helper: Attach order_items to a parent order object
+// Helper: Safely attach items to an order
 async function attachItemsToOrder(order) {
   if (!order) return null;
+  
+  let items = [];
   try {
     const itemsResult = await db.execute({
       sql: 'SELECT * FROM order_items WHERE order_id = ?',
       args: [order.id],
     });
-    return {
-      ...order,
-      // Map customer_* names back to client_* if frontend expects them
-      client_name: order.customer_name,
-      client_phone: order.customer_phone,
-      items: itemsResult.rows,
-    };
+    items = itemsResult.rows || [];
   } catch (err) {
-    console.error(`Error fetching items for order ${order.id}:`, err);
-    return { ...order, items: [] };
+    console.error(`Could not fetch order_items for order ${order.id}:`, err.message);
   }
+
+  return {
+    ...order,
+    client_name: order.customer_name || '',
+    client_phone: order.customer_phone || '',
+    items,
+  };
 }
 
 // POST /api/orders - Create Order
@@ -36,7 +38,7 @@ router.post('/', async (req, res) => {
     const phone = customer_phone || client_phone || null;
     const itemList = Array.isArray(items) ? items : (typeof items === 'string' ? JSON.parse(items) : []);
 
-    // 1. Insert into orders table matching exact Turso columns
+    // 1. Insert into parent 'orders' table
     await db.execute({
       sql: `
         INSERT INTO orders (id, customer_name, customer_phone, total_amount, status)
@@ -51,25 +53,33 @@ router.post('/', async (req, res) => {
       ],
     });
 
-    // 2. Insert line items into order_items table
+    // 2. Insert into 'order_items' table with item_name included
     for (const item of itemList) {
       const orderItemId = uuidv4();
-      await db.execute({
-        sql: `
-          INSERT INTO order_items (id, order_id, menu_item_id, quantity, price)
-          VALUES (?, ?, ?, ?, ?)
-        `,
-        args: [
-          orderItemId,
-          orderId,
-          item.id || item.menu_item_id || item.item_id,
-          item.quantity || item.qty || 1,
-          item.price || 0,
-        ],
-      });
+      const itemName = item.name || item.item_name || item.title || 'Menu Item';
+      const menuItemId = item.id || item.menu_item_id || item.item_id || uuidv4();
+      const qty = item.quantity || item.qty || 1;
+
+      try {
+        await db.execute({
+          sql: `
+            INSERT INTO order_items (id, order_id, menu_item_id, item_name, quantity)
+            VALUES (?, ?, ?, ?, ?)
+          `,
+          args: [
+            orderItemId,
+            orderId,
+            menuItemId,
+            itemName,
+            qty,
+          ],
+        });
+      } catch (itemErr) {
+        console.error('Failed to insert row into order_items:', itemErr.message);
+      }
     }
 
-    // 3. Fetch and return complete created order
+    // 3. Retrieve and respond
     const orderResult = await db.execute({
       sql: 'SELECT * FROM orders WHERE id = ?',
       args: [orderId],
@@ -86,8 +96,8 @@ router.post('/', async (req, res) => {
 // GET /api/orders - List Orders
 router.get('/', async (req, res) => {
   try {
-    const result = await db.execute('SELECT * FROM orders ORDER BY id DESC');
-    const ordersWithItems = await Promise.all(result.rows.map(attachItemsToOrder));
+    const result = await db.execute('SELECT * FROM orders');
+    const ordersWithItems = await Promise.all((result.rows || []).map(attachItemsToOrder));
     res.json(ordersWithItems);
   } catch (err) {
     console.error('Error fetching orders:', err);
@@ -95,7 +105,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /api/orders/:id - Single Order
+// GET /api/orders/:id - Get Single Order
 router.get('/:id', async (req, res) => {
   try {
     const result = await db.execute({
@@ -141,10 +151,14 @@ router.put('/:id/status', async (req, res) => {
   }
 });
 
-// DELETE /api/orders - Clear Orders
+// DELETE /api/orders - Clear All Orders
 router.delete('/', async (req, res) => {
   try {
-    await db.execute('DELETE FROM order_items');
+    try {
+      await db.execute('DELETE FROM order_items');
+    } catch (e) {
+      console.error('Error clearing order_items:', e.message);
+    }
     const result = await db.execute('DELETE FROM orders');
     res.json({ success: true, deleted: Number(result.rowsAffected) });
   } catch (err) {
@@ -156,10 +170,14 @@ router.delete('/', async (req, res) => {
 // DELETE /api/orders/:id - Delete Single Order
 router.delete('/:id', async (req, res) => {
   try {
-    await db.execute({
-      sql: 'DELETE FROM order_items WHERE order_id = ?',
-      args: [req.params.id],
-    });
+    try {
+      await db.execute({
+        sql: 'DELETE FROM order_items WHERE order_id = ?',
+        args: [req.params.id],
+      });
+    } catch (e) {
+      console.error('Error deleting order_items:', e.message);
+    }
 
     const result = await db.execute({
       sql: 'DELETE FROM orders WHERE id = ?',
