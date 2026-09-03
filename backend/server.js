@@ -18,7 +18,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Flexible CORS setup for local dev and Render deployment
+// Flexible CORS setup
 const allowedOrigins = [
   process.env.ALLOWED_ORIGIN,
   'https://ggshcant-1.onrender.com',
@@ -40,13 +40,11 @@ app.use(cors({
 app.use('/api/payments/stripe/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 
-// Path to Vite's root dist directory
 const distPath = path.join(__dirname, '../dist');
 
-// Serve static build assets
-app.use(express.static(distPath));
-
-// API Routes
+// ==========================================
+// 1. REGISTER ALL API ROUTES FIRST
+// ==========================================
 app.use('/api/client-auth', clientAuthRoutes);
 app.use('/api/staff-auth', staffAuthRoutes);
 app.use('/api/menu', menuRoutes);
@@ -55,10 +53,18 @@ app.use('/api/payments', paymentRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
-// Catch-all route to serve index.html for client-side React routes like /orders
+// ==========================================
+// 2. SERVE STATIC FRONTEND ASSETS
+// ==========================================
+app.use(express.static(distPath));
+
+// ==========================================
+// 3. SPA WILDCARD CATCH-ALL (MUST BE LAST)
+// ==========================================
 app.get('*', (req, res) => {
+  // Prevent API requests from serving index.html if unmatched
   if (req.path.startsWith('/api')) {
-    return res.status(404).json({ error: 'API route not found' });
+    return res.status(404).json({ error: `API route ${req.path} not found` });
   }
 
   const indexPath = path.join(distPath, 'index.html');
