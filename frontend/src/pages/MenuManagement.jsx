@@ -78,14 +78,14 @@ export default function MenuManagement() {
           <div className="flex items-center gap-3">
             <Link to="/"><Button variant="ghost" size="icon"><ArrowLeft className="w-5 h-5" /></Button></Link>
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center"><UtensilsCrossed className="w-5 h-5 text-white" /></div>
+              <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center"><UtensilsCrossed className="w-5 h-5 text-white" /></div>
               <div>
                 <h1 className="font-heading font-bold text-[15px] leading-none">Menu Management</h1>
                 <p className="text-[11px] text-muted-foreground">Manage cafeteria items</p>
               </div>
             </div>
           </div>
-          <Button onClick={handleAdd} className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full">
+          <Button onClick={handleAdd} className="bg-blue-600 hover:bg-blue-700 text-white rounded-full">
             <Plus className="w-4 h-4 mr-1.5" /> Add Item
           </Button>
         </div>
@@ -95,7 +95,7 @@ export default function MenuManagement() {
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
         {loading ? (
-          <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-emerald-600" /></div>
+          <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-blue-600" /></div>
         ) : items.length === 0 ? (
           <div className="py-20 text-center text-sm text-muted-foreground">No menu items yet.</div>
         ) : (
@@ -113,7 +113,7 @@ export default function MenuManagement() {
                   </div>
                   <p className="text-xs text-muted-foreground truncate">{item.description || "No description"}</p>
                   <div className="flex items-center gap-3 mt-1">
-                    <span className="text-sm font-semibold text-emerald-700">{"\u20B5"}{item.price?.toFixed(2)}</span>
+                    <span className="text-sm font-semibold text-blue-700">{"\u20B5"}{item.price?.toFixed(2)}</span>
                     <Badge variant="outline" className="text-[10px]">{item.category}</Badge>
                   </div>
                 </div>

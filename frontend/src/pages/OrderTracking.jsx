@@ -56,11 +56,11 @@ export default function OrderTracking() {
   }, {});
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50/40 via-background to-background">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50/40 via-background to-background">
       <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center"><UtensilsCrossed className="w-5 h-5 text-white" /></div>
+            <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center"><UtensilsCrossed className="w-5 h-5 text-white" /></div>
             <div>
               <h1 className="font-heading font-bold text-[15px] leading-none">Order Tracking</h1>
               <p className="text-[11px] text-muted-foreground">Staff kitchen dashboard</p>
@@ -79,7 +79,7 @@ export default function OrderTracking() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
         {loading && orders.length === 0 ? (
-          <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-emerald-600" /></div>
+          <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-blue-600" /></div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {COLUMNS.map((col) => (

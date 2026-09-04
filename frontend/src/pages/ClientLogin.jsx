@@ -65,14 +65,14 @@ export default function ClientLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50/40 via-background to-background flex flex-col">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50/40 via-background to-background flex flex-col">
       <header className="px-4 sm:px-6 h-16 flex items-center">
         <Link to="/"><Button variant="ghost" size="icon"><ArrowLeft className="w-5 h-5" /></Button></Link>
       </header>
       <div className="flex-1 flex items-center justify-center px-4 py-8">
         <Card className="w-full max-w-sm p-6 space-y-5">
           <div className="text-center">
-            <div className="w-12 h-12 rounded-xl bg-emerald-600 flex items-center justify-center mx-auto mb-3">
+            <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center mx-auto mb-3">
               {mode === "login" ? <Smartphone className="w-6 h-6 text-white" /> : <KeyRound className="w-6 h-6 text-white" />}
             </div>
             <h1 className="font-heading font-bold text-xl">{mode === "login" ? "Client Login" : "Reset PIN"}</h1>
@@ -94,11 +94,11 @@ export default function ClientLogin() {
                 <Label htmlFor="pin">6-Digit PIN</Label>
                 <Input id="pin" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="******" inputMode="numeric" type="password" maxLength={6} required />
               </div>
-              <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white" disabled={loading || pin.length !== 6}>
+              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white" disabled={loading || pin.length !== 6}>
                 {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Login
               </Button>
-              <button type="button" onClick={() => { setMode("reset"); setPin(""); }} className="w-full text-xs text-muted-foreground hover:text-emerald-700 inline-flex items-center justify-center gap-1">
+              <button type="button" onClick={() => { setMode("reset"); setPin(""); }} className="w-full text-xs text-muted-foreground hover:text-blue-700 inline-flex items-center justify-center gap-1">
                 <KeyRound className="w-3 h-3" /> Forgot PIN? Reset it
               </button>
             </form>
@@ -120,11 +120,11 @@ export default function ClientLogin() {
                 <Label htmlFor="rp-confirm">Confirm New PIN</Label>
                 <Input id="rp-confirm" value={confirmPin} onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="******" inputMode="numeric" type="password" maxLength={6} required />
               </div>
-              <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white" disabled={loading || newPin.length !== 6}>
+              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white" disabled={loading || newPin.length !== 6}>
                 {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Reset PIN
               </Button>
-              <button type="button" onClick={() => { setMode("login"); setFullName(""); setNewPin(""); setConfirmPin(""); }} className="w-full text-xs text-muted-foreground hover:text-emerald-700 inline-flex items-center justify-center gap-1">
+              <button type="button" onClick={() => { setMode("login"); setFullName(""); setNewPin(""); setConfirmPin(""); }} className="w-full text-xs text-muted-foreground hover:text-blue-700 inline-flex items-center justify-center gap-1">
                 <ArrowLeft className="w-3 h-3" /> Back to login
               </button>
             </form>
@@ -133,7 +133,7 @@ export default function ClientLogin() {
           {mode === "login" && (
             <p className="text-center text-xs text-muted-foreground">
               Don't have an account?{" "}
-              <Link to="/client-register" className="text-emerald-600 font-medium hover:underline">Register</Link>
+              <Link to="/client-register" className="text-blue-600 font-medium hover:underline">Register</Link>
             </p>
           )}
         </Card>

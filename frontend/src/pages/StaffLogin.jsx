@@ -64,10 +64,10 @@ export default function StaffLogin() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-emerald-50/40 via-background to-background px-4 py-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50/40 via-background to-background px-4 py-8">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-          <div className="w-12 h-12 rounded-xl bg-emerald-600 flex items-center justify-center mx-auto mb-2">
+          <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center mx-auto mb-2">
             {mode === "login" ? <ShieldCheck className="w-6 h-6 text-white" /> : <KeyRound className="w-6 h-6 text-white" />}
           </div>
           <CardTitle className="font-heading">{mode === "login" ? "Staff Login" : "Change PIN"}</CardTitle>
@@ -86,10 +86,10 @@ export default function StaffLogin() {
                 <Label htmlFor="staff-pin">6-digit PIN</Label>
                 <Input id="staff-pin" inputMode="numeric" pattern="\d{6}" maxLength={6} value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))} placeholder="••••••" className="h-10 tracking-[0.3em] text-center font-semibold" required />
               </div>
-              <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white h-10" disabled={loading}>
+              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white h-10" disabled={loading}>
                 {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Signing in...</> : "Sign In"}
               </Button>
-              <button type="button" onClick={() => { setMode("change"); setPin(""); }} className="w-full text-xs text-muted-foreground hover:text-emerald-700 inline-flex items-center justify-center gap-1">
+              <button type="button" onClick={() => { setMode("change"); setPin(""); }} className="w-full text-xs text-muted-foreground hover:text-blue-700 inline-flex items-center justify-center gap-1">
                 <KeyRound className="w-3 h-3" /> Change PIN
               </button>
               <p className="text-[11px] text-muted-foreground text-center">Forgot your PIN? Contact your administrator to reset it.</p>
@@ -112,16 +112,16 @@ export default function StaffLogin() {
                 <Label htmlFor="cp-confirm">Confirm New PIN</Label>
                 <Input id="cp-confirm" inputMode="numeric" pattern="\d{6}" maxLength={6} value={confirmPin} onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ""))} placeholder="••••••" className="h-10 tracking-[0.3em] text-center font-semibold" required />
               </div>
-              <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white h-10" disabled={loading}>
+              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white h-10" disabled={loading}>
                 {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Updating...</> : "Update PIN"}
               </Button>
-              <button type="button" onClick={() => { setMode("login"); setOldPin(""); setNewPin(""); setConfirmPin(""); }} className="w-full text-xs text-muted-foreground hover:text-emerald-700 inline-flex items-center justify-center gap-1">
+              <button type="button" onClick={() => { setMode("login"); setOldPin(""); setNewPin(""); setConfirmPin(""); }} className="w-full text-xs text-muted-foreground hover:text-blue-700 inline-flex items-center justify-center gap-1">
                 <ArrowLeft className="w-3 h-3" /> Back to login
               </button>
             </form>
           )}
           <div className="mt-4 text-center">
-            <Link to="/" className="text-xs text-muted-foreground hover:text-emerald-700 inline-flex items-center gap-1">
+            <Link to="/" className="text-xs text-muted-foreground hover:text-blue-700 inline-flex items-center gap-1">
               <UtensilsCrossed className="w-3 h-3" /> Back to menu
             </Link>
           </div>

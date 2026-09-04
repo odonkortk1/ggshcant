@@ -34,7 +34,7 @@ export default function AdminNav() {
                 to={tab.path}
                 className={`inline-flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                   active
-                    ? "border-emerald-600 text-emerald-700"
+                    ? "border-blue-600 text-blue-700"
                     : "border-transparent text-muted-foreground hover:text-foreground"
                 }`}
               >

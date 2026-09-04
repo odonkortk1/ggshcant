@@ -13,6 +13,8 @@ const PAY_METHOD_COLORS = { momo: "#7c3aed", cash: "#f59e0b" };
 function toISODate(d) { return d.toISOString().split("T")[0]; }
 function startOfDay(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
 function endOfDay(d) { const x = new Date(d); x.setHours(23, 59, 59, 999); return x; }
+function orderTotal(order) { return Number(order.total ?? order.total_amount) || 0; }
+function isCashOrder(order) { return order.payment_method === "cash"; }
 
 export default function SalesAnalytics() {
   const [orders, setOrders] = useState([]);
@@ -50,14 +52,13 @@ export default function SalesAnalytics() {
     });
   }, [orders, startDate, endDate]);
 
-  const completedOrders = rangeOrders.filter((o) => o.status === "completed");
-  const totalRevenue = completedOrders.reduce((s, o) => s + o.total, 0);
+  const totalRevenue = rangeOrders.reduce((s, o) => s + orderTotal(o), 0);
   const totalOrders = rangeOrders.length;
 
-  const momoOrders = completedOrders.filter((o) => o.payment_method !== "cash");
-  const cashOrders = completedOrders.filter((o) => o.payment_method === "cash");
-  const momoRevenue = momoOrders.reduce((s, o) => s + o.total, 0);
-  const cashRevenue = cashOrders.reduce((s, o) => s + o.total, 0);
+  const momoOrders = rangeOrders.filter((o) => !isCashOrder(o));
+  const cashOrders = rangeOrders.filter(isCashOrder);
+  const momoRevenue = momoOrders.reduce((s, o) => s + orderTotal(o), 0);
+  const cashRevenue = cashOrders.reduce((s, o) => s + orderTotal(o), 0);
 
   const payMethodData = [
     { name: "MoMo", value: momoRevenue, count: momoOrders.length, color: PAY_METHOD_COLORS.momo },
@@ -81,8 +82,8 @@ export default function SalesAnalytics() {
         const dayOrders = orders.filter((o) => o.created_at?.split("T")[0] === dateStr);
         buckets.push({
           label: new Date(d).toLocaleDateString("en", { month: "short", day: "numeric" }),
-          momo: dayOrders.filter((o) => o.status === "completed" && o.payment_method !== "cash").reduce((s, o) => s + o.total, 0),
-          cash: dayOrders.filter((o) => o.status === "completed" && o.payment_method === "cash").reduce((s, o) => s + o.total, 0),
+          momo: dayOrders.filter((o) => !isCashOrder(o)).reduce((s, o) => s + orderTotal(o), 0),
+          cash: dayOrders.filter(isCashOrder).reduce((s, o) => s + orderTotal(o), 0),
         });
       }
     } else {
@@ -92,8 +93,8 @@ export default function SalesAnalytics() {
         const weekOrders = orders.filter((o) => { const od = new Date(o.created_at); return od >= cursor && od <= bEnd; });
         buckets.push({
           label: cursor.toLocaleDateString("en", { month: "short", day: "numeric" }),
-          momo: weekOrders.filter((o) => o.status === "completed" && o.payment_method !== "cash").reduce((s, o) => s + o.total, 0),
-          cash: weekOrders.filter((o) => o.status === "completed" && o.payment_method === "cash").reduce((s, o) => s + o.total, 0),
+          momo: weekOrders.filter((o) => !isCashOrder(o)).reduce((s, o) => s + orderTotal(o), 0),
+          cash: weekOrders.filter(isCashOrder).reduce((s, o) => s + orderTotal(o), 0),
         });
         cursor.setDate(cursor.getDate() + 7);
       }
@@ -103,22 +104,22 @@ export default function SalesAnalytics() {
 
   const transactions = [...rangeOrders].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 100);
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-emerald-600" /></div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-blue-600" /></div>;
 
   const stats = [
-    { label: "Revenue", value: `${"\u20B5"}${totalRevenue.toFixed(2)}`, icon: DollarSign, color: "text-emerald-600", bg: "bg-emerald-50" },
+    { label: "Revenue", value: `${"\u20B5"}${totalRevenue.toFixed(2)}`, icon: DollarSign, color: "text-blue-600", bg: "bg-blue-50" },
     { label: "Orders", value: totalOrders, icon: ShoppingBag, color: "text-blue-600", bg: "bg-blue-50" },
     { label: "MoMo Revenue", value: `${"\u20B5"}${momoRevenue.toFixed(2)}`, icon: Smartphone, color: "text-violet-600", bg: "bg-violet-50" },
     { label: "Cash Revenue", value: `${"\u20B5"}${cashRevenue.toFixed(2)}`, icon: Banknote, color: "text-amber-600", bg: "bg-amber-50" },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50/30 via-background to-background">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50/30 via-background to-background">
       <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-3">
           <Link to="/"><Button variant="ghost" size="icon"><ArrowLeft className="w-5 h-5" /></Button></Link>
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center"><TrendingUp className="w-5 h-5 text-white" /></div>
+            <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center"><TrendingUp className="w-5 h-5 text-white" /></div>
             <div>
               <h1 className="font-heading font-bold text-[15px] leading-none">Sales Analytics</h1>
               <p className="text-[11px] text-muted-foreground">Cafeteria performance</p>
@@ -131,7 +132,7 @@ export default function SalesAnalytics() {
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
         <Card className="p-4">
-          <div className="flex items-center gap-2 mb-3"><Calendar className="w-4 h-4 text-emerald-600" /><h3 className="font-heading font-semibold text-sm">Select Date Range</h3></div>
+          <div className="flex items-center gap-2 mb-3"><Calendar className="w-4 h-4 text-blue-600" /><h3 className="font-heading font-semibold text-sm">Select Date Range</h3></div>
           <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
             <div className="grid gap-1.5"><label className="text-xs text-muted-foreground">From</label><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-9 w-full sm:w-44" /></div>
             <div className="grid gap-1.5"><label className="text-xs text-muted-foreground">To</label><Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="h-9 w-full sm:w-44" /></div>
@@ -231,7 +232,7 @@ export default function SalesAnalytics() {
                         <span className={o.status === "completed" ? "text-emerald-600" : o.status === "pending" ? "text-amber-600" : o.status === "preparing" ? "text-blue-600" : "text-violet-600"}>{o.status}</span>
                       </p>
                     </div>
-                    <span className="text-sm font-bold shrink-0">{"\u20B5"}{o.total?.toFixed(2)}</span>
+                    <span className="text-sm font-bold shrink-0">{"\u20B5"}{orderTotal(o).toFixed(2)}</span>
                   </div>
                 );
               })}

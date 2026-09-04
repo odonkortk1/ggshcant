@@ -50,18 +50,18 @@ export default function OrderHistory() {
   }, [client, isStaff]);
 
   if (clientLoading || staffLoading) {
-    return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-emerald-600" /></div>;
+    return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-blue-600" /></div>;
   }
 
   if (!client && !isStaff) return <Navigate to="/client-login" replace />;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50/30 via-background to-background">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50/30 via-background to-background">
       <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-3">
           <Link to="/"><Button variant="ghost" size="icon"><ArrowLeft className="w-5 h-5" /></Button></Link>
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center"><Receipt className="w-5 h-5 text-white" /></div>
+            <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center"><Receipt className="w-5 h-5 text-white" /></div>
             <div>
               <h1 className="font-heading font-bold text-[15px] leading-none">Order History</h1>
               <p className="text-[11px] text-muted-foreground">{isStaff ? "All orders" : `${client.full_name}'s orders`}</p>
@@ -74,13 +74,13 @@ export default function OrderHistory() {
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
         {loading ? (
-          <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-emerald-600" /></div>
+          <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-blue-600" /></div>
         ) : orders.length === 0 ? (
           <div className="py-20 text-center">
             <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-3"><Receipt className="w-7 h-7 text-muted-foreground" /></div>
             <p className="text-sm font-medium">No orders yet</p>
             <p className="text-xs text-muted-foreground mt-1">{isStaff ? "There are no orders in the system." : "Your placed orders will appear here."}</p>
-            {!isStaff && <Link to="/"><Button className="mt-4 bg-emerald-600 hover:bg-emerald-700 text-white">Browse Menu</Button></Link>}
+            {!isStaff && <Link to="/"><Button className="mt-4 bg-blue-600 hover:bg-blue-700 text-white">Browse Menu</Button></Link>}
           </div>
         ) : (
           <div className="space-y-3">
@@ -102,7 +102,7 @@ export default function OrderHistory() {
                       </span>
                       <span className="text-[11px] text-muted-foreground flex items-center gap-1"><Clock className="w-3 h-3" /> {formatDate(order.created_at)}</span>
                     </div>
-                    <span className="font-heading font-bold text-emerald-700">{"\u20B5"}{order.total?.toFixed(2)}</span>
+                    <span className="font-heading font-bold text-blue-700">{"\u20B5"}{order.total?.toFixed(2)}</span>
                   </div>
                   <div className="flex items-center gap-2 mb-2">
                     <p className="text-sm font-medium">{order.customer_name}</p>

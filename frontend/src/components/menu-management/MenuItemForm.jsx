@@ -117,7 +117,7 @@ export default function MenuItemForm({ open, onOpenChange, item, onSave }) {
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white" disabled={saving}>
+            <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white" disabled={saving}>
               {saving && <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />}
               {item ? "Save Changes" : "Create Item"}
             </Button>
