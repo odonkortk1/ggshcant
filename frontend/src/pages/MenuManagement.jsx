@@ -60,15 +60,19 @@ export default function MenuManagement() {
   const handleAdd = () => { setEditing(null); setFormOpen(true); };
 
   const handleSave = async (data) => {
-    if (editing) {
-      await api.put(`/api/menu/${editing.id}`, data, { auth: true });
-      toast({ title: "Item updated" });
-    } else {
-      await api.post("/api/menu", data, { auth: true });
-      toast({ title: "Item created" });
+    try {
+      if (editing) {
+        await api.put(`/api/menu/${editing.id}`, data, { auth: true });
+        toast({ title: "Item updated" });
+      } else {
+        await api.post("/api/menu", data, { auth: true });
+        toast({ title: "Item created" });
+      }
+      setFormOpen(false);
+      load();
+    } catch (err) {
+      toast({ title: "Could not save menu item", description: err.message, variant: "destructive" });
     }
-    setFormOpen(false);
-    load();
   };
 
   return (

@@ -6,7 +6,7 @@ import db from '../db/index.js';
 import { requireStaff } from './middleware/auth.js';
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_change_in_prod';
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
 
 // POST /api/staff/login
 router.post('/login', async (req, res) => {
