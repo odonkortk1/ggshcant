@@ -15,6 +15,7 @@ function startOfDay(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x
 function endOfDay(d) { const x = new Date(d); x.setHours(23, 59, 59, 999); return x; }
 function orderTotal(order) { return Number(order.total ?? order.total_amount) || 0; }
 function isCashOrder(order) { return order.payment_method === "cash"; }
+function isCompleted(order) { return String(order.status || "").toLowerCase() === "completed"; }
 
 export default function SalesAnalytics() {
   const [orders, setOrders] = useState([]);
@@ -48,7 +49,7 @@ export default function SalesAnalytics() {
     const e = endOfDay(new Date(endDate));
     return orders.filter((o) => {
       const od = new Date(o.created_at);
-      return od >= s && od <= e;
+      return isCompleted(o) && od >= s && od <= e;
     });
   }, [orders, startDate, endDate]);
 
@@ -79,7 +80,7 @@ export default function SalesAnalytics() {
     if (spanDays <= 31) {
       for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
         const dateStr = toISODate(d);
-        const dayOrders = orders.filter((o) => o.created_at?.split("T")[0] === dateStr);
+        const dayOrders = orders.filter((o) => isCompleted(o) && o.created_at?.split("T")[0] === dateStr);
         buckets.push({
           label: new Date(d).toLocaleDateString("en", { month: "short", day: "numeric" }),
           momo: dayOrders.filter((o) => !isCashOrder(o)).reduce((s, o) => s + orderTotal(o), 0),
@@ -90,7 +91,7 @@ export default function SalesAnalytics() {
       const cursor = new Date(s);
       while (cursor <= e) {
         const bEnd = new Date(cursor); bEnd.setDate(bEnd.getDate() + 6); bEnd.setHours(23, 59, 59, 999);
-        const weekOrders = orders.filter((o) => { const od = new Date(o.created_at); return od >= cursor && od <= bEnd; });
+        const weekOrders = orders.filter((o) => { const od = new Date(o.created_at); return isCompleted(o) && od >= cursor && od <= bEnd; });
         buckets.push({
           label: cursor.toLocaleDateString("en", { month: "short", day: "numeric" }),
           momo: weekOrders.filter((o) => !isCashOrder(o)).reduce((s, o) => s + orderTotal(o), 0),
