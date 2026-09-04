@@ -187,8 +187,15 @@ router.put('/:id/status', async (req, res) => {
   }
 });
 
-// DELETE /api/orders - Clear All Orders
+// DELETE /api/orders - Clear All Orders with Admin Password
 router.delete('/', async (req, res) => {
+  const { password } = req.body;
+  const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+
+  if (!password || password !== adminPassword) {
+    return res.status(401).json({ error: 'Unauthorized: Incorrect admin password' });
+  }
+
   try {
     try {
       await db.execute('DELETE FROM order_items');
