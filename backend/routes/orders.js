@@ -53,10 +53,17 @@ router.post('/', async (req, res) => {
     const { id, client_name, client_phone, customer_name, customer_phone, items, total_amount, status } = req.body;
 
     const orderId = id || uuidv4();
-    const safeTotal = typeof total_amount === 'number' ? total_amount : parseFloat(total_amount) || 0;
     const name = customer_name || client_name || 'Guest';
     const phone = customer_phone || client_phone || '';
     const itemList = Array.isArray(items) ? items : (typeof items === 'string' ? JSON.parse(items) : []);
+    const calculatedTotal = itemList.reduce((sum, item) => {
+      const price = Number(item.price) || 0;
+      const quantity = Number(item.quantity || item.qty) || 1;
+      return sum + price * quantity;
+    }, 0);
+    const safeTotal = typeof total_amount === 'number'
+      ? total_amount
+      : parseFloat(total_amount) || calculatedTotal;
 
     await db.execute({
       sql: `
@@ -77,12 +84,13 @@ router.post('/', async (req, res) => {
       const itemName = item.name || item.item_name || item.title || 'Menu Item';
       const menuItemId = item.id || item.menu_item_id || item.item_id || uuidv4();
       const qty = item.quantity || item.qty || 1;
+      const price = Number(item.price) || 0;
 
       try {
         await db.execute({
           sql: `
-            INSERT INTO order_items (id, order_id, menu_item_id, item_name, quantity)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO order_items (id, order_id, menu_item_id, item_name, quantity, price)
+            VALUES (?, ?, ?, ?, ?, ?)
           `,
           args: [
             orderItemId,
@@ -90,6 +98,7 @@ router.post('/', async (req, res) => {
             menuItemId,
             itemName,
             qty,
+            price,
           ],
         });
       } catch (itemErr) {
