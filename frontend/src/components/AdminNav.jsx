@@ -1,6 +1,6 @@
 ﻿import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ClipboardList, TrendingUp, UtensilsCrossed, History, LogOut } from "lucide-react";
+import { ClipboardList, TrendingUp, UtensilsCrossed, History, UserCog, LogOut } from "lucide-react";
 import { useStaffAuth } from "@/lib/StaffAuthContext";
 import { Button } from "@/components/ui/button";
 
@@ -9,12 +9,14 @@ const TABS = [
   { path: "/analytics", label: "Analytics", icon: TrendingUp },
   { path: "/menu-management", label: "Menu", icon: UtensilsCrossed },
   { path: "/order-history", label: "History", icon: History },
+  { path: "/staff", label: "Staff Management", icon: UserCog, adminOnly: true },
 ];
 
 export default function AdminNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const { staff, logoutStaff } = useStaffAuth();
+  const visibleTabs = TABS.filter((tab) => !tab.adminOnly || staff?.role === "admin");
 
   const handleLogout = () => {
     logoutStaff();
@@ -25,7 +27,7 @@ export default function AdminNav() {
     <nav className="sticky top-16 z-20 bg-background/80 backdrop-blur-md border-b">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full flex items-center justify-between gap-1 overflow-x-auto">
         <div className="flex items-center gap-1">
-          {TABS.map((tab) => {
+          {visibleTabs.map((tab) => {
             const active = location.pathname === tab.path;
             const Icon = tab.icon;
             return (

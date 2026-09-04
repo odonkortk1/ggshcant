@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import Logo from "@/components/Logo";
 import { UtensilsCrossed, Loader2, ShieldCheck, KeyRound, ArrowLeft } from "lucide-react";
 
 export default function StaffLogin() {
@@ -31,7 +32,7 @@ export default function StaffLogin() {
     try {
       const res = await api.post("/api/staff-auth/login", { email: email.trim(), pin });
       loginStaff(res.data);
-      toast({ title: `Welcome, ${res.data.full_name}!` });
+      toast({ title: `Welcome, ${res.data.staff.full_name}!` });
       navigate("/orders");
     } catch (err) {
       toast({ title: err?.message || "Login failed", variant: "destructive" });
@@ -64,11 +65,30 @@ export default function StaffLogin() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50/40 via-background to-background px-4 py-8">
-      <Card className="w-full max-w-sm">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50/40 via-background to-background">
+      <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2.5">
+            <Logo className="w-9 h-9" />
+            <div>
+              <h1 className="font-heading font-bold text-lg sm:text-xl leading-none">GGSH Canteen</h1>
+              <p className="text-[11px] text-muted-foreground">Hospital cafeteria</p>
+            </div>
+          </Link>
+          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5">
+            <UtensilsCrossed className="w-4 h-4" /> Back to menu
+          </Link>
+        </div>
+      </header>
+
+      <main className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-8">
+        <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-          <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center mx-auto mb-2">
-            {mode === "login" ? <ShieldCheck className="w-6 h-6 text-white" /> : <KeyRound className="w-6 h-6 text-white" />}
+          <div className="relative w-16 h-16 mx-auto mb-2">
+            <Logo className="w-16 h-16" />
+            <div className="absolute -right-1 -bottom-1 w-6 h-6 rounded-full bg-blue-600 ring-2 ring-background flex items-center justify-center">
+              {mode === "login" ? <ShieldCheck className="w-3.5 h-3.5 text-white" /> : <KeyRound className="w-3.5 h-3.5 text-white" />}
+            </div>
           </div>
           <CardTitle className="font-heading">{mode === "login" ? "Staff Login" : "Change PIN"}</CardTitle>
           <CardDescription>
@@ -126,7 +146,8 @@ export default function StaffLogin() {
             </Link>
           </div>
         </CardContent>
-      </Card>
+        </Card>
+      </main>
     </div>
   );
 }

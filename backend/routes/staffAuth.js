@@ -25,12 +25,12 @@ router.post('/login', async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: staff.id, name: staff.name, email: staff.email, role: staff.role },
+      { id: staff.id, full_name: staff.full_name, email: staff.email, role: staff.role },
       JWT_SECRET,
       { expiresIn: '12h' }
     );
 
-    res.json({ token, staff: { id: staff.id, name: staff.name, email: staff.email, role: staff.role } });
+    res.json({ token, staff: { id: staff.id, full_name: staff.full_name, email: staff.email, role: staff.role } });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Authentication failed' });
@@ -67,7 +67,7 @@ router.post('/set-pin', async (req, res) => {
 router.get('/', requireStaff, async (req, res) => {
   if (req.staff.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
   try {
-    const result = await db.execute('SELECT id, name, email, role, created_at FROM staff ORDER BY name ASC');
+    const result = await db.execute('SELECT id, full_name, email, role, created_at FROM staff ORDER BY full_name ASC');
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch staff members' });
@@ -77,9 +77,9 @@ router.get('/', requireStaff, async (req, res) => {
 // POST /api/staff (Admin only - create staff)
 router.post('/', requireStaff, async (req, res) => {
   if (req.staff.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
-  const { name, email, role, pin } = req.body;
+  const { full_name, email, role, pin } = req.body;
 
-  if (!name || !email || !pin) {
+  if (!full_name || !email || !pin) {
     return res.status(400).json({ error: 'Name, email, and PIN are required' });
   }
 
@@ -98,11 +98,11 @@ router.post('/', requireStaff, async (req, res) => {
     const pinHash = await bcrypt.hash(pin, 10);
 
     await db.execute({
-      sql: 'INSERT INTO staff (id, name, email, role, pin_hash) VALUES (?, ?, ?, ?, ?)',
-      args: [id, name, normalizedEmail, role || 'staff', pinHash],
+      sql: 'INSERT INTO staff (id, full_name, email, role, pin_hash) VALUES (?, ?, ?, ?, ?)',
+      args: [id, full_name.trim(), normalizedEmail, role || 'staff', pinHash],
     });
 
-    res.json({ id, name, email: normalizedEmail, role: role || 'staff' });
+    res.json({ id, full_name: full_name.trim(), email: normalizedEmail, role: role || 'staff' });
   } catch (err) {
     console.error('Create staff error:', err);
     res.status(500).json({ error: 'Failed to create staff member' });

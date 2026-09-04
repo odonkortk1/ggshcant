@@ -10,15 +10,17 @@ export function StaffAuthProvider({ children }) {
     const stored = localStorage.getItem("staff_auth");
     if (stored) {
       try {
-        setStaff(JSON.parse(stored));
+        const parsed = JSON.parse(stored);
+        setStaff(parsed?.staff ? { ...parsed.staff, token: parsed.token } : parsed);
       } catch {}
     }
     setLoading(false);
   }, []);
 
   const loginStaff = (staffData) => {
-    setStaff(staffData);
-    localStorage.setItem("staff_auth", JSON.stringify(staffData));
+    const normalized = staffData?.staff ? { ...staffData.staff, token: staffData.token } : staffData;
+    setStaff(normalized);
+    localStorage.setItem("staff_auth", JSON.stringify(normalized));
   };
 
   const logoutStaff = () => {

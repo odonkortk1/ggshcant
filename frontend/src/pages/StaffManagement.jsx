@@ -25,7 +25,7 @@ export default function StaffManagement() {
   const [newResetPin, setNewResetPin] = useState("");
 
   const loadStaff = () => {
-    api.get("/api/staff-auth/staff", { auth: true })
+    api.get("/api/staff-auth", { auth: true })
       .then((res) => setStaffList(res.data))
       .catch(() => toast({ title: "Could not load staff list", variant: "destructive" }))
       .finally(() => setLoading(false));
@@ -41,7 +41,7 @@ export default function StaffManagement() {
     }
     setCreating(true);
     try {
-      await api.post("/api/staff-auth/staff", { full_name: fullName.trim(), email: email.trim().toLowerCase(), pin, role }, { auth: true });
+      await api.post("/api/staff-auth", { full_name: fullName.trim(), email: email.trim().toLowerCase(), pin, role }, { auth: true });
       toast({ title: "Staff account created!", description: `${email.trim()} can now log in with their PIN.` });
       setFullName(""); setEmail(""); setPin(""); setRole("staff");
       loadStaff();
@@ -58,7 +58,7 @@ export default function StaffManagement() {
       return;
     }
     try {
-      await api.patch(`/api/staff-auth/staff/${id}/reset-pin`, { pin: newResetPin }, { auth: true });
+      await api.put(`/api/staff-auth/${id}/pin`, { pin: newResetPin }, { auth: true });
       toast({ title: "PIN reset successfully", description: "The staff member can now log in with the new PIN." });
       setResettingId(null); setNewResetPin("");
     } catch {
@@ -67,8 +67,9 @@ export default function StaffManagement() {
   };
 
   const handleDelete = async (id) => {
+    if (!window.confirm("Remove this staff account? They will no longer be able to log in.")) return;
     try {
-      await api.delete(`/api/staff-auth/staff/${id}`, { auth: true });
+      await api.delete(`/api/staff-auth/${id}`, { auth: true });
       setStaffList((prev) => prev.filter((s) => s.id !== id));
       toast({ title: "Staff account removed" });
     } catch {
