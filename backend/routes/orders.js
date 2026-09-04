@@ -19,8 +19,9 @@ async function attachItemsToOrder(order) {
     console.error(`Could not fetch order_items for order ${order.id}:`, err.message);
   }
 
-  // Normalize status string across different frontend tab checks
-  const currentStatus = order.status ? order.status.toLowerCase() : 'received';
+  // Normalize status string so pending/received map to 'new' for the active dashboard
+  const currentStatus = order.status ? order.status.toLowerCase() : 'new';
+  const mappedStatus = ['pending', 'received', 'new'].includes(currentStatus) ? 'new' : currentStatus;
 
   return {
     ...order,
@@ -30,8 +31,8 @@ async function attachItemsToOrder(order) {
     client_phone: order.customer_phone || order.client_phone || '',
     customer_phone: order.customer_phone || order.client_phone || '',
     
-    // Map status so 'received' satisfies 'new' or 'received' filters
-    status: currentStatus === 'received' ? 'new' : currentStatus,
+    // Map status so 'pending' or 'received' satisfies 'new' filters
+    status: mappedStatus,
     raw_status: currentStatus,
     payment_status: order.payment_status || 'pending',
     
