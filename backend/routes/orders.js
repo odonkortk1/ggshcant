@@ -102,20 +102,24 @@ router.post('/', async (req, res) => {
       const qty = item.quantity || item.qty || 1;
       const price = Number(item.price) || 0;
 
-      await db.execute({
-        sql: `
-          INSERT INTO order_items (id, order_id, menu_item_id, item_name, quantity, price)
-          VALUES (?, ?, ?, ?, ?, ?)
-        `,
-        args: [
-          orderItemId,
-          orderId,
-          menuItemId,
-          itemName,
-          qty,
-          price,
-        ],
-      });
+      try {
+        await db.execute({
+          sql: `
+            INSERT INTO order_items (id, order_id, menu_item_id, item_name, quantity, price)
+            VALUES (?, ?, ?, ?, ?, ?)
+          `,
+          args: [
+            orderItemId,
+            orderId,
+            menuItemId,
+            itemName,
+            qty,
+            price,
+          ],
+        });
+      } catch (itemErr) {
+        console.error(`Order ${orderId} saved, but item could not be stored:`, itemErr.message);
+      }
     }
 
     const orderResult = await db.execute({

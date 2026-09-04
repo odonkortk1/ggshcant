@@ -114,10 +114,11 @@ export default function Home() {
           payment_method: ggshPayment ? "ggsh_ussd" : "cash",
           client_phone: client_phone || "",
         });
-        setLastOrder(res.data);
+        const savedOrder = { ...res.data, total: Number(res.data?.total ?? res.data?.total_amount) || 0 };
+        setLastOrder(savedOrder);
         if (ggshPayment) {
           setGgshPhone(client_phone || "");
-          setGgshTotal(res.data.total);
+          setGgshTotal(savedOrder.total);
           setGgshOpen(true);
           toast({ title: "Order placed!", description: "Dial the USSD code to complete payment." });
         } else {
