@@ -16,7 +16,9 @@ export default function AdminNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const { staff, logoutStaff } = useStaffAuth();
-  const visibleTabs = TABS.filter((tab) => !tab.adminOnly || staff?.role === "admin");
+  
+  // Updated with .toLowerCase() to safely match "Admin", "ADMIN", or "admin"
+  const visibleTabs = TABS.filter((tab) => !tab.adminOnly || staff?.role?.toLowerCase() === "admin");
 
   const handleLogout = () => {
     logoutStaff();
