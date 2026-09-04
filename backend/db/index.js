@@ -42,10 +42,10 @@ async function initDb() {
         )
       `);
 
-      try {
+      const columnsResult = await db.execute('PRAGMA table_info(order_items)');
+      const hasPriceColumn = (columnsResult.rows || []).some((column) => column.name === 'price');
+      if (!hasPriceColumn) {
         await db.execute('ALTER TABLE order_items ADD COLUMN price REAL NOT NULL DEFAULT 0');
-      } catch (err) {
-        if (!/duplicate column/i.test(err.message || '')) throw err;
       }
       console.log('Database schema synchronized successfully.');
     }

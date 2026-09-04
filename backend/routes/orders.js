@@ -50,7 +50,17 @@ async function attachItemsToOrder(order) {
 // POST /api/orders - Create Order
 router.post('/', async (req, res) => {
   try {
-    const { id, client_name, client_phone, customer_name, customer_phone, items, total_amount, status } = req.body;
+    const {
+      id,
+      client_name,
+      client_phone,
+      customer_name,
+      customer_phone,
+      items,
+      total_amount,
+      payment_method,
+      status,
+    } = req.body;
 
     const orderId = id || uuidv4();
     const name = customer_name || client_name || 'Guest';
@@ -67,14 +77,18 @@ router.post('/', async (req, res) => {
 
     await db.execute({
       sql: `
-        INSERT INTO orders (id, customer_name, customer_phone, total_amount, status)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO orders (
+          id, customer_name, customer_phone, total_amount, total, payment_method, status
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       `,
       args: [
         orderId,
         name,
         phone,
         safeTotal,
+        safeTotal,
+        payment_method || 'cash',
         status || 'received',
       ],
     });
@@ -86,24 +100,20 @@ router.post('/', async (req, res) => {
       const qty = item.quantity || item.qty || 1;
       const price = Number(item.price) || 0;
 
-      try {
-        await db.execute({
-          sql: `
-            INSERT INTO order_items (id, order_id, menu_item_id, item_name, quantity, price)
-            VALUES (?, ?, ?, ?, ?, ?)
-          `,
-          args: [
-            orderItemId,
-            orderId,
-            menuItemId,
-            itemName,
-            qty,
-            price,
-          ],
-        });
-      } catch (itemErr) {
-        console.error('Failed to insert order_item:', itemErr.message);
-      }
+      await db.execute({
+        sql: `
+          INSERT INTO order_items (id, order_id, menu_item_id, item_name, quantity, price)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `,
+        args: [
+          orderItemId,
+          orderId,
+          menuItemId,
+          itemName,
+          qty,
+          price,
+        ],
+      });
     }
 
     const orderResult = await db.execute({
