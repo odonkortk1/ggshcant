@@ -19,9 +19,9 @@ async function attachItemsToOrder(order) {
     console.error(`Could not fetch order_items for order ${order.id}:`, err.message);
   }
 
-  // Normalize status string so pending/received map to 'new' for the active dashboard
+  // Normalize legacy client statuses to the dashboard's first column.
   const currentStatus = order.status ? order.status.toLowerCase() : 'new';
-  const mappedStatus = ['pending', 'received', 'new'].includes(currentStatus) ? 'new' : currentStatus;
+  const mappedStatus = ['pending', 'received', 'new'].includes(currentStatus) ? 'pending' : currentStatus;
 
   return {
     ...order,
@@ -31,7 +31,7 @@ async function attachItemsToOrder(order) {
     client_phone: order.customer_phone || order.client_phone || '',
     customer_phone: order.customer_phone || order.client_phone || '',
     
-    // Map status so 'pending' or 'received' satisfies 'new' filters
+    // Map legacy pending/received statuses to the dashboard's pending column.
     status: mappedStatus,
     raw_status: currentStatus,
     payment_status: order.payment_status || 'pending',

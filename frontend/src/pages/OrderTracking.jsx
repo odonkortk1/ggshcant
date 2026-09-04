@@ -39,7 +39,7 @@ export default function OrderTracking() {
     const prev = orders;
     setOrders((cur) => cur.map((o) => o.id === order.id ? { ...o, status: newStatus } : o));
     try {
-      await api.patch(`/api/orders/${order.id}/status`, { status: newStatus }, { auth: true });
+      await api.put(`/api/orders/${order.id}/status`, { status: newStatus }, { auth: true });
       toast({ title: `Order moved to ${newStatus}`, duration: 1500 });
       if (newStatus === "completed") {
         setOrders((cur) => cur.filter((o) => o.id !== order.id));
