@@ -172,8 +172,8 @@ router.put('/:id/status', async (req, res) => {
   try {
     if (status) {
       await db.execute({
-        sql: 'UPDATE orders SET status = ? WHERE id = ?',
-        args: [status, req.params.id],
+        sql: 'UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        args: [status.toLowerCase(), req.params.id],
       });
     }
 
