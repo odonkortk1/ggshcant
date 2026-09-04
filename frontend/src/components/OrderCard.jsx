@@ -1,6 +1,6 @@
 ﻿import React from "react";
 import { Button } from "@/components/ui/button";
-import { Clock, Flame, CheckCircle2, ChefHat, PackageCheck, Smartphone, Banknote, Phone, Hash } from "lucide-react";
+import { Clock, Flame, CheckCircle2, ChefHat, PackageCheck, Smartphone, Banknote, Phone, Hash, ShoppingBasket, UtensilsCrossed } from "lucide-react";
 
 const STATUS_CONFIG = {
   pending: { label: "New", color: "text-slate-600", bg: "bg-slate-50", ring: "ring-slate-200", icon: Clock },
@@ -34,6 +34,8 @@ export default function OrderCard({ order, onAdvance }) {
   const action = NEXT_ACTION[order.status];
   const Icon = cfg.icon;
   const isCash = order.payment_method === "cash";
+  const isTakeaway = order.pickup_note?.toLowerCase() === "takeaway";
+  const diningLabel = isTakeaway ? "Takeaway" : order.pickup_note?.toLowerCase() === "dine_in" ? "Dine In" : null;
 
   return (
     <div className={`rounded-2xl bg-card border shadow-sm p-4 ring-1 ${cfg.ring} flex flex-col gap-3`}>
@@ -55,6 +57,12 @@ export default function OrderCard({ order, onAdvance }) {
           <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${isCash ? "bg-amber-100 text-amber-700" : "bg-violet-100 text-violet-700"}`}>
             {isCash ? <><Banknote className="w-2.5 h-2.5" /> Cash</> : <><Smartphone className="w-2.5 h-2.5" /> MoMo</>}
           </span>
+          {diningLabel && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+              {isTakeaway ? <ShoppingBasket className="w-2.5 h-2.5" /> : <UtensilsCrossed className="w-2.5 h-2.5" />}
+              {diningLabel}
+            </span>
+          )}
         </div>
       </div>
 
@@ -64,8 +72,6 @@ export default function OrderCard({ order, onAdvance }) {
         ))}
         {order.items?.length > 3 && <p className="text-[11px] italic">+{order.items.length - 3} more</p>}
       </div>
-
-      {order.pickup_note && <p className="text-[11px] bg-muted/50 rounded-md px-2 py-1 text-muted-foreground">Note: {order.pickup_note}</p>}
 
       <div className="flex items-center justify-between pt-1 border-t">
         <span className="text-sm font-bold">{"\u20B5"}{order.total?.toFixed(2)}</span>

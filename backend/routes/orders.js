@@ -59,6 +59,7 @@ router.post('/', async (req, res) => {
       items,
       total_amount,
       payment_method,
+      pickup_note,
       status,
     } = req.body;
 
@@ -78,9 +79,9 @@ router.post('/', async (req, res) => {
     await db.execute({
       sql: `
         INSERT INTO orders (
-          id, customer_name, customer_phone, total_amount, total, payment_method, status
+          id, customer_name, customer_phone, total_amount, total, payment_method, pickup_note, status
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `,
       args: [
         orderId,
@@ -89,6 +90,7 @@ router.post('/', async (req, res) => {
         safeTotal,
         safeTotal,
         payment_method || 'cash',
+        pickup_note || null,
         status || 'received',
       ],
     });
