@@ -21,6 +21,7 @@ const PORT = process.env.PORT || 3001;
 // Flexible CORS setup
 const allowedOrigins = [
   process.env.ALLOWED_ORIGIN,
+  'https://ggshcant.onrender.com',
   'https://ggshcant-1.onrender.com',
   'http://localhost:5173',
   'http://localhost:3000'
