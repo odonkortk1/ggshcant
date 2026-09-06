@@ -1,7 +1,7 @@
 ﻿import { Outlet, Navigate } from 'react-router-dom';
 import { useStaffAuth } from '@/lib/StaffAuthContext';
 
-export default function AdminRoute() {
+export default function AdminRoute({ requireAdmin = false }) {
   const { staff, loading } = useStaffAuth();
 
   if (loading) {
@@ -17,8 +17,8 @@ export default function AdminRoute() {
     return <Navigate to="/staff-login" replace />;
   }
 
-  // If logged in but NOT an admin, redirect them away (e.g., back to /orders)
-  if (staff.role?.toLowerCase() !== 'admin') {
+  // Admin-only screens reject regular staff while order tracking remains available.
+  if (requireAdmin && staff.role?.toLowerCase() !== 'admin') {
     return <Navigate to="/orders" replace />;
   }
 

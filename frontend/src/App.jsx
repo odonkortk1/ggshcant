@@ -35,6 +35,8 @@ function App() {
               <Route path="/staff-login" element={<StaffLogin />} />
               <Route element={<AdminRoute />}>
                 <Route path="/orders" element={<OrderTracking />} />
+              </Route>
+              <Route element={<AdminRoute requireAdmin />}>
                 <Route path="/menu-management" element={<MenuManagement />} />
                 <Route path="/analytics" element={<SalesAnalytics />} />
                 <Route path="/staff" element={<StaffManagement />} />
