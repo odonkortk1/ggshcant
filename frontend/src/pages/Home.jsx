@@ -167,16 +167,16 @@ export default function Home() {
                 <Button variant="ghost" size="icon" className="rounded-full"><Receipt className="w-4 h-4" /></Button>
               </Link>
             )}
-            {isAdmin && (
+            {staff && (
               <>
                 <Link to="/analytics"><Button variant="ghost" size="icon" className="rounded-full"><BarChart3 className="w-4 h-4" /></Button></Link>
                 <Link to="/menu-management"><Button variant="ghost" size="icon" className="rounded-full"><BookOpen className="w-4 h-4" /></Button></Link>
-                <Link to="/staff" title="Staff Management" aria-label="Staff Management">
+                {isAdmin && <Link to="/staff" title="Staff Management" aria-label="Staff Management">
                   <Button variant="ghost" size="sm" className="rounded-full">
                     <UserCog className="w-4 h-4 sm:mr-1.5" />
                     <span className="hidden sm:inline">Staff Management</span>
                   </Button>
-                </Link>
+                </Link>}
                 <Link to="/orders"><Button variant="outline" size="sm" className="rounded-full"><ClipboardList className="w-4 h-4 mr-1.5" /> Orders</Button></Link>
               </>
             )}
@@ -184,9 +184,6 @@ export default function Home() {
               <Link to="/staff-login">
                 <Button variant="ghost" size="sm" className="rounded-full text-muted-foreground"><ClipboardList className="w-4 h-4 mr-1.5" /> Staff</Button>
               </Link>
-            )}
-            {staff && !isAdmin && (
-              <Link to="/orders"><Button variant="outline" size="sm" className="rounded-full"><ClipboardList className="w-4 h-4 mr-1.5" /> Orders</Button></Link>
             )}
             {staff && (
               <div className="flex items-center gap-1">

@@ -36,9 +36,11 @@ function App() {
               <Route element={<AdminRoute />}>
                 <Route path="/orders" element={<OrderTracking />} />
               </Route>
-              <Route element={<AdminRoute requireAdmin />}>
+              <Route element={<AdminRoute />}>
                 <Route path="/menu-management" element={<MenuManagement />} />
                 <Route path="/analytics" element={<SalesAnalytics />} />
+              </Route>
+              <Route element={<AdminRoute requireAdmin />}>
                 <Route path="/staff" element={<StaffManagement />} />
               </Route>
               <Route path="*" element={<PageNotFound />} />
