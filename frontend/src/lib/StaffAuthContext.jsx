@@ -2,6 +2,14 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 
 const StaffAuthContext = createContext(null);
 
+function normalizeStaff(staffData) {
+  if (!staffData) return null;
+  return {
+    ...staffData,
+    role: String(staffData.role || "staff").toLowerCase(),
+  };
+}
+
 export function StaffAuthProvider({ children }) {
   const [staff, setStaff] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -11,14 +19,14 @@ export function StaffAuthProvider({ children }) {
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        setStaff(parsed?.staff ? { ...parsed.staff, token: parsed.token } : parsed);
+        setStaff(normalizeStaff(parsed?.staff ? { ...parsed.staff, token: parsed.token } : parsed));
       } catch {}
     }
     setLoading(false);
   }, []);
 
   const loginStaff = (staffData) => {
-    const normalized = staffData?.staff ? { ...staffData.staff, token: staffData.token } : staffData;
+    const normalized = normalizeStaff(staffData?.staff ? { ...staffData.staff, token: staffData.token } : staffData);
     setStaff(normalized);
     localStorage.setItem("staff_auth", JSON.stringify(normalized));
   };

@@ -12,8 +12,14 @@ export default function AdminRoute() {
     );
   }
 
+  // If not logged in at all, redirect to login
   if (!staff) {
     return <Navigate to="/staff-login" replace />;
+  }
+
+  // If logged in but NOT an admin, redirect them away (e.g., back to /orders)
+  if (staff.role?.toLowerCase() !== 'admin') {
+    return <Navigate to="/orders" replace />;
   }
 
   return <Outlet />;
