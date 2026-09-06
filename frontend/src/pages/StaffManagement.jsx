@@ -91,7 +91,7 @@ export default function StaffManagement() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50/40 via-background to-background">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50/40 via-background to-background">
       <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -107,7 +107,7 @@ export default function StaffManagement() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-heading"><UserPlus className="w-5 h-5 text-emerald-600" /> Create Staff Account</CardTitle>
+            <CardTitle className="flex items-center gap-2 font-heading"><UserPlus className="w-5 h-5 text-blue-600" /> Create Staff Account</CardTitle>
             <CardDescription>The staff member will log in with their email and the 6-digit PIN you set here.</CardDescription>
           </CardHeader>
           <CardContent>
@@ -124,7 +124,7 @@ export default function StaffManagement() {
                   </select>
                 </div>
               </div>
-              <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white h-10 sm:w-auto sm:px-8" disabled={creating}>
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white h-10 sm:w-auto sm:px-8" disabled={creating}>
                 {creating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Creating...</> : <><UserPlus className="w-4 h-4 mr-2" /> Create Account</>}
               </Button>
             </form>
@@ -133,12 +133,12 @@ export default function StaffManagement() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-heading"><Users className="w-5 h-5 text-emerald-600" /> Current Staff</CardTitle>
+            <CardTitle className="flex items-center gap-2 font-heading"><Users className="w-5 h-5 text-blue-600" /> Current Staff</CardTitle>
             <CardDescription>Everyone with staff dashboard access.</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="flex items-center justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-emerald-600" /></div>
+              <div className="flex items-center justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-blue-600" /></div>
             ) : staffList.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">No staff accounts yet.</p>
             ) : (
@@ -146,20 +146,20 @@ export default function StaffManagement() {
                 {staffList.map((s) => (
                   <div key={s.id} className="flex items-center justify-between py-3">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center shrink-0"><Shield className="w-4 h-4 text-emerald-700" /></div>
+                      <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0"><Shield className="w-4 h-4 text-blue-700" /></div>
                       <div className="min-w-0"><p className="text-sm font-medium truncate">{s.full_name}</p><p className="text-xs text-muted-foreground truncate">{s.email}</p></div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${s.role === "admin" ? "bg-emerald-100 text-emerald-700" : "bg-muted text-muted-foreground"}`}>{s.role === "admin" ? "Admin" : "Staff"}</span>
+                      <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${s.role === "admin" ? "bg-blue-100 text-blue-700" : "bg-muted text-muted-foreground"}`}>{s.role === "admin" ? "Admin" : "Staff"}</span>
                       {resettingId === s.id ? (
                         <div className="flex items-center gap-1">
                           <Input inputMode="numeric" maxLength={6} value={newResetPin} onChange={(e) => setNewResetPin(e.target.value.replace(/\D/g, ""))} placeholder="New PIN" className="h-8 w-20 text-xs tracking-widest text-center" />
-                          <Button size="sm" className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => handleResetPin(s.id)}>Save</Button>
+                          <Button size="sm" className="h-8 bg-blue-600 hover:bg-blue-700 text-white" onClick={() => handleResetPin(s.id)}>Save</Button>
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setResettingId(null); setNewResetPin(""); }}><ArrowLeft className="w-3 h-3" /></Button>
                         </div>
                       ) : (
                         <>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-emerald-700" onClick={() => { setResettingId(s.id); setNewResetPin(""); }}><KeyRound className="w-3.5 h-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-blue-700" onClick={() => { setResettingId(s.id); setNewResetPin(""); }}><KeyRound className="w-3.5 h-3.5" /></Button>
                           <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDelete(s.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
                         </>
                       )}
